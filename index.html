@@ -1,0 +1,2750 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>老虎城旗艦店｜營運追蹤系統 V1</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f4f0;--surface:#fff;--surface2:#faf8f4;--border:#e6e0d4;--border2:#d0c8b4;
+  --text:#18120a;--text2:#5c4c34;--text3:#9c8868;
+  --gold:#b45309;--gold2:#d97706;--gold3:#fbbf24;--gold-bg:#fffbeb;--gold-bdr:#fde68a;
+  --green:#059669;--green-bg:#ecfdf5;--green-bdr:#6ee7b7;
+  --red:#dc2626;--red-bg:#fef2f2;--red-bdr:#fecaca;
+  --blue:#0891b2;--blue-bg:#ecfeff;--blue-bdr:#a5f3fc;
+  --r:10px;--r2:14px;--sh:0 1px 4px rgba(0,0,0,.07);--sh2:0 4px 14px rgba(0,0,0,.11);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Noto Sans TC',-apple-system,sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;}
+.page{max-width:1120px;margin:0 auto;padding-bottom:60px;}
+
+/* ── Header ── */
+.hdr{background:linear-gradient(135deg,#170f08 0%,#3a1e0c 55%,#6b3518 100%);padding:16px 20px 14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
+.hdr-left .tag{display:inline-flex;align-items:center;gap:5px;background:rgba(251,191,36,.18);border:1px solid rgba(251,191,36,.35);color:#fbbf24;font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;margin-bottom:6px;letter-spacing:.6px;}
+.hdr-left h1{font-size:19px;font-weight:700;color:#fff;line-height:1.2;}
+.hdr-left .sub{font-size:12px;color:rgba(255,255,255,.45);margin-top:3px;}
+.hdr-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-top:4px;}
+select.msel{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#fff;padding:7px 10px;border-radius:var(--r);font-size:13px;font-family:inherit;cursor:pointer;-webkit-appearance:none;}
+select.msel option{color:#1a1208;background:#fff;}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border:none;border-radius:var(--r);cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;transition:all .15s;white-space:nowrap;}
+.btn-gold{background:var(--gold2);color:#fff;}
+.btn-gold:hover{background:var(--gold);}
+.btn-sm{padding:5px 11px;font-size:12px;}
+.btn-ghost{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#fff;}
+.btn-ghost:hover{background:rgba(255,255,255,.2);}
+.btn-mgr{background:rgba(255,215,0,.15);border:1px solid rgba(255,215,0,.32);color:#fbbf24;}
+.btn-mgr.on{background:#fbbf24;color:#17100a;}
+.btn-danger{background:var(--red-bg);border:1px solid var(--red-bdr);color:var(--red);}
+.btn-g{background:var(--green-bg);border:1px solid var(--green-bdr);color:var(--green);}
+
+/* ── Tab Bar ── */
+.tab-bar{background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;position:sticky;top:0;z-index:50;}
+.tab-bar::-webkit-scrollbar{display:none;}
+.tab-inner{display:inline-flex;padding:0 14px;}
+.tab{display:inline-flex;align-items:center;gap:5px;padding:12px 13px;border:none;border-bottom:2.5px solid transparent;background:none;cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;color:var(--text3);transition:all .15s;white-space:nowrap;}
+.tab:hover{color:var(--text2);}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold);font-weight:700;}
+
+/* ── Panel ── */
+.panel{display:none;padding:14px 16px 0;}
+.panel.active{display:block;}
+
+/* ── Cards ── */
+.kpi-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px;}
+@media(min-width:600px){.kpi-row{grid-template-columns:repeat(4,1fr);}}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;}
+.kpi-lbl{font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.3px;margin-bottom:5px;}
+.kpi-val{font-size:26px;font-weight:700;line-height:1;}
+.kpi-sub{font-size:12px;color:var(--text3);margin-top:4px;}
+.kpi-bar{margin-top:8px;height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+.kpi-bar-fill{height:100%;border-radius:3px;transition:width .5s;}
+
+/* ── Ring Cards ── */
+.ring-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px;}
+@media(min-width:600px){.ring-row{grid-template-columns:repeat(4,1fr);}}
+.ring-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;text-align:center;}
+.ring-card svg{width:84px;height:84px;display:block;margin:0 auto 8px;}
+.ring-lbl{font-size:12px;font-weight:600;color:var(--text2);}
+.ring-vals{font-size:11px;color:var(--text3);margin-top:2px;}
+.ring-pct{font-size:14px;font-weight:700;margin-top:3px;}
+
+/* ── Sec title ── */
+.sec{margin-bottom:12px;}
+.sec-hd{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.sec-hd-l{display:flex;align-items:center;gap:7px;}
+.sec-hd-l::before{content:'';width:3px;height:14px;background:var(--gold2);border-radius:2px;flex-shrink:0;}
+
+/* ── Staff Grid ── */
+.staff-grid{display:grid;grid-template-columns:1fr;gap:9px;margin-bottom:12px;}
+@media(min-width:540px){.staff-grid{grid-template-columns:repeat(2,1fr);}}
+@media(min-width:860px){.staff-grid{grid-template-columns:repeat(3,1fr);}}
+.scard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;}
+.scard-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.scard-name{font-size:15px;font-weight:700;}
+.scard-rank{font-size:20px;line-height:1;}
+.scard-pct{font-size:12px;font-weight:700;padding:2px 9px;border-radius:100px;}
+.scard-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:3px 0;}
+.scard-key{color:var(--text3);}
+.scard-v{font-weight:600;}
+.bar-wrap{margin-top:8px;}
+.bar-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:3px;}
+.bar-track{height:7px;background:var(--border);border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s;}
+
+/* ── Chart Card ── */
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;}
+.chart-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.chart-ttl{font-size:13px;font-weight:600;}
+.chart-wrap{position:relative;height:200px;}
+
+/* ── Form ── */
+.form-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:12px;}
+.subtabs{display:flex;gap:6px;margin-bottom:20px;background:var(--surface2);border-radius:var(--r);padding:4px;}
+.stab{flex:1;text-align:center;padding:9px 6px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;color:var(--text3);background:transparent;transition:all .15s;}
+.stab.active{background:var(--surface);color:var(--gold);box-shadow:var(--sh);}
+.subpanel{display:none;}
+.subpanel.active{display:block;}
+.fg{margin-bottom:15px;}
+.fg label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;}
+.fg label span{font-weight:400;color:var(--text3);font-size:12px;margin-left:4px;}
+.fi{width:100%;padding:11px 14px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:15px;font-family:inherit;background:var(--surface);color:var(--text);transition:border .15s;-webkit-appearance:none;appearance:none;}
+.fi:focus{outline:none;border-color:var(--gold2);box-shadow:0 0 0 3px rgba(217,119,6,.1);}
+.form-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:380px){.form-row2{grid-template-columns:1fr;}}
+.form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+@media(max-width:500px){.form-row3{grid-template-columns:1fr 1fr;}}
+.fi-check-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1.5px solid var(--border2);border-radius:var(--r);cursor:pointer;}
+/* ── Multi-checkbox ── */
+.multi-check-box{border:1.5px solid var(--border2);border-radius:var(--r);padding:10px 12px;background:var(--surface);display:flex;flex-wrap:wrap;gap:6px 12px;}
+.mc-item{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text);padding:3px 0;}
+.mc-item input[type=checkbox]{width:17px;height:17px;accent-color:var(--gold2);cursor:pointer;flex-shrink:0;}
+.mc-item span{line-height:1.3;}
+.mc-other-input{font-size:14px;}
+.fi-check-row input[type=checkbox]{width:20px;height:20px;cursor:pointer;accent-color:var(--gold2);}
+.fi-check-lbl{font-size:14px;font-weight:500;color:var(--text);}
+.fsec-title{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.6px;text-transform:uppercase;margin:18px 0 10px;padding-top:10px;border-top:1px solid var(--border);}
+.submit-btn{width:100%;padding:15px;background:var(--gold2);color:#fff;border:none;border-radius:var(--r);font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;transition:background .15s;margin-top:4px;}
+.submit-btn:hover{background:var(--gold);}
+.submit-btn:active{transform:scale(.98);}
+.toast{display:none;border-radius:var(--r);padding:12px 16px;margin-bottom:12px;font-size:14px;font-weight:600;text-align:center;}
+.toast-ok{background:var(--green-bg);border:1px solid var(--green-bdr);color:var(--green);}
+.toast-err{background:var(--red-bg);border:1px solid var(--red-bdr);color:var(--red);}
+
+/* ── Table ── */
+.tbl-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r);}
+table{width:100%;border-collapse:collapse;background:var(--surface);}
+th{background:var(--surface2);padding:9px 12px;font-size:12px;font-weight:600;color:var(--text2);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);}
+td{padding:9px 12px;font-size:13px;border-bottom:1px solid var(--border);white-space:nowrap;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:700;}
+.b-green{background:var(--green-bg);color:var(--green);}
+.b-red{background:var(--red-bg);color:var(--red);}
+.b-gold{background:var(--gold-bg);color:var(--gold);}
+.b-blue{background:var(--blue-bg);color:var(--blue);}
+.b-gray{background:var(--surface2);color:var(--text3);}
+
+/* ── Targets Tab ── */
+.target-view{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:18px;margin-bottom:12px;}
+.tgt-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;}
+@media(min-width:600px){.tgt-grid{grid-template-columns:repeat(4,1fr);}}
+.tgt-box{background:var(--gold-bg);border:1px solid var(--gold-bdr);border-radius:var(--r);padding:12px;text-align:center;}
+.tgt-box-lbl{font-size:11px;font-weight:700;color:var(--gold);margin-bottom:5px;}
+.tgt-box-val{font-size:22px;font-weight:700;color:var(--text);}
+.tgt-box-unit{font-size:12px;color:var(--text3);margin-top:2px;}
+.mgr-panel{background:var(--gold-bg);border:1.5px solid var(--gold-bdr);border-radius:var(--r2);padding:20px;margin-bottom:12px;}
+.mgr-ttl{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+.tgt-inp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
+@media(min-width:600px){.tgt-inp-grid{grid-template-columns:repeat(3,1fr);}}
+.tgt-inp-box{background:var(--surface);border:1px solid var(--gold-bdr);border-radius:var(--r);padding:12px;}
+.tgt-inp-box label{font-size:11px;font-weight:700;color:var(--gold);display:block;margin-bottom:6px;}
+.tgt-inp-box input{width:100%;border:none;font-size:20px;font-weight:700;color:var(--text);font-family:inherit;background:transparent;outline:none;}
+.tgt-inp-box .unit{font-size:11px;color:var(--text3);margin-top:2px;}
+.staff-tgt-tbl{background:var(--surface);border-radius:var(--r);overflow:hidden;border:1px solid var(--gold-bdr);}
+.stgt-row{display:grid;grid-template-columns:2fr 1fr 1fr;padding:10px 14px;align-items:center;gap:8px;border-bottom:1px solid var(--border);}
+.stgt-row:last-child{border-bottom:none;}
+.stgt-row.hd{background:var(--surface2);font-size:12px;font-weight:700;color:var(--text3);}
+.stgt-row input{width:100%;border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:14px;font-family:inherit;text-align:center;outline:none;}
+.stgt-row input:focus{border-color:var(--gold2);}
+
+/* ── PIN Modal ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center;padding:20px;overflow-y:auto;}
+.modal-bg.show{display:flex;}
+.modal{background:var(--surface);border-radius:var(--r2);padding:28px 24px;max-width:300px;width:100%;text-align:center;box-shadow:0 24px 48px rgba(0,0,0,.22);}
+.modal h3{font-size:18px;font-weight:700;margin-bottom:5px;}
+.modal p{font-size:13px;color:var(--text3);margin-bottom:18px;}
+#pin-input{display:block;width:140px;text-align:center;font-size:26px;font-weight:700;letter-spacing:10px;padding:12px;border:2px solid var(--border2);border-radius:var(--r);font-family:inherit;margin:0 auto 12px;outline:none;}
+#pin-input:focus{border-color:var(--gold2);}
+.pin-err{color:var(--red);font-size:13px;margin-bottom:8px;display:none;}
+
+/* ── Forecast ── */
+.forecast{background:linear-gradient(135deg,var(--gold-bg),#fff8ee);border:1.5px solid var(--gold-bdr);border-radius:var(--r2);padding:16px;margin-bottom:12px;}
+.fcst-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--gold-bdr);}
+.fcst-row:last-child{border-bottom:none;}
+.fcst-lbl{font-size:13px;color:var(--text2);}
+.fcst-val{font-size:14px;font-weight:700;}
+.c-green{color:var(--green);}
+.c-gold{color:var(--gold);}
+.c-red{color:var(--red);}
+
+/* ── Notice ── */
+.notice{border-radius:var(--r);padding:10px 14px;font-size:12px;margin-bottom:10px;display:flex;gap:8px;align-items:flex-start;}
+.n-info{background:var(--blue-bg);border:1px solid var(--blue-bdr);color:var(--blue);}
+.n-warn{background:var(--gold-bg);border:1px solid var(--gold-bdr);color:var(--gold);}
+.n-demo{background:#f5f3ff;border:1px solid #ddd6fe;color:#7c3aed;}
+
+/* ── Empty ── */
+.empty{text-align:center;padding:36px 20px;color:var(--text3);}
+.empty-icon{font-size:36px;margin-bottom:8px;}
+.empty-txt{font-size:13px;}
+
+/* ── Dual Track ── */
+.dual-track{display:grid;grid-template-columns:1fr auto 1fr;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:14px;margin-bottom:10px;}
+@media(max-width:580px){.dual-track{grid-template-columns:1fr;}}
+.dual-col{min-width:0;}
+.dual-hd{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.4px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.dual-hd span{font-weight:400;}
+.dual-divider{width:1px;background:var(--border);margin:0 14px;}
+@media(max-width:580px){.dual-divider{width:100%;height:1px;margin:12px 0;}}
+.dual-col .kpi{border:none;padding:10px 0 0;box-shadow:none;}
+.profit-ok{color:var(--green);}
+.profit-miss{color:var(--red);}
+.profit-hist-row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 12px;border-radius:8px;background:var(--surface2);margin-bottom:4px;font-size:13px;gap:8px;}
+.profit-hist-date{color:var(--text2);font-weight:600;flex-shrink:0;}
+.profit-hist-amt{color:var(--gold);font-weight:700;}
+.profit-hist-note{font-size:11px;color:var(--text3);margin-top:1px;}
+/* ── Live Record Cards ── */
+.live-rec-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:8px;}
+.live-rec-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.live-rec-no{font-size:13px;font-weight:700;color:var(--gold);}
+.live-rec-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+.live-rec-kv{background:var(--surface2);border-radius:7px;padding:8px 10px;text-align:center;}
+.live-rec-kv-lbl{font-size:10px;color:var(--text3);font-weight:600;margin-bottom:3px;}
+.live-rec-kv-val{font-size:15px;font-weight:700;}
+.live-rec-crew{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.crew-chip{border-radius:100px;padding:3px 10px;font-size:12px;font-weight:600;}
+.crew-host{background:var(--gold-bg);border:1px solid var(--gold-bdr);color:var(--gold);}
+.crew-cohost{background:var(--blue-bg);border:1px solid var(--blue-bdr);color:var(--blue);}
+.crew-helper{background:var(--green-bg);border:1px solid var(--green-bdr);color:var(--green);}
+.live-rec-input-card{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);padding:14px;margin-bottom:8px;}
+.live-rec-input-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:13px;font-weight:700;color:var(--gold);}
+.live-rec-num-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
+.live-rec-sel-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+@media(min-width:540px){.live-rec-sel-grid{grid-template-columns:repeat(4,1fr);}}
+.lri-lbl{font-size:11px;font-weight:700;margin-bottom:4px;}
+.lri-lbl-host{color:var(--gold);}
+.lri-lbl-co{color:var(--blue);}
+.lri-lbl-helper{color:var(--green);}
+/* 5-col staff target row */
+.stgt-row-5{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr;padding:10px 14px;align-items:center;gap:6px;border-bottom:1px solid var(--border);}
+.stgt-row-5:last-child{border-bottom:none;}
+.stgt-row-5 input{width:100%;border:1px solid var(--border2);border-radius:6px;padding:6px 4px;font-size:13px;font-family:inherit;text-align:center;outline:none;}
+.stgt-row-5 input:focus{border-color:var(--gold2);}
+
+/* ── Live tracker ── */
+.live-tracker{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px;}
+.live-hd{font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:7px;}
+.live-dots{display:flex;gap:8px;flex-wrap:wrap;}
+.live-dot{width:36px;height:36px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;color:var(--text3);}
+.live-dot.done{background:var(--gold2);border-color:var(--gold);color:#fff;}
+
+/* ── Calendar ── */
+.cal-range-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 0 8px;gap:12px;}
+.cal-range-inputs{display:flex;align-items:center;gap:12px;}
+.cal-range-field{display:flex;flex-direction:column;gap:2px;}
+.cal-range-lbl{font-size:11px;color:var(--text3);font-weight:600;}
+.cal-range-val{font-size:14px;font-weight:700;color:var(--gold);min-width:60px;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:4px;}
+.cal-dow{font-size:11px;font-weight:700;color:var(--text3);text-align:center;padding:4px 0;}
+.cal-dow.sun{color:#dc2626;}
+.cal-dow.sat{color:#0891b2;}
+.cal-cell{border-radius:8px;padding:5px 4px 6px;min-height:54px;cursor:pointer;transition:all .15s;position:relative;border:1px solid transparent;}
+.cal-cell:hover{background:var(--gold-bg);border-color:var(--gold-bdr);}
+.cal-cell.today{background:var(--gold-bg);border-color:var(--gold2);}
+.cal-cell.range-start,.cal-cell.range-end{background:var(--gold2);border-color:var(--gold);color:#fff;}
+.cal-cell.range-start .cal-d,.cal-cell.range-end .cal-d{color:#fff;}
+.cal-cell.in-range{background:rgba(217,119,6,.1);border-color:rgba(217,119,6,.2);}
+.cal-cell.empty{cursor:default;background:none;}
+.cal-cell.empty:hover{background:none;border-color:transparent;}
+.cal-d{font-size:12px;font-weight:700;text-align:center;margin-bottom:3px;}
+.cal-cell.today:not(.range-start):not(.range-end) .cal-d{color:var(--gold);}
+.cal-cell.sun:not(.range-start):not(.range-end) .cal-d{color:#dc2626;}
+.cal-cell.sat:not(.range-start):not(.range-end) .cal-d{color:#0891b2;}
+.cal-amt{font-size:11px;font-weight:700;text-align:center;color:var(--gold);white-space:nowrap;}
+.cal-cell.range-start .cal-amt,.cal-cell.range-end .cal-amt{color:rgba(255,255,255,.9);}
+.cal-dot-row{display:flex;justify-content:center;gap:2px;margin-top:2px;}
+.cal-dot{width:5px;height:5px;border-radius:50%;}
+.cal-detail{background:var(--surface2);border:1px solid var(--gold-bdr);border-radius:var(--r);padding:14px;margin-top:10px;}
+.cal-detail-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.cal-staff-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;font-size:12px;padding:7px 0;border-bottom:1px solid var(--border);}
+.cal-staff-row:last-child{border-bottom:none;}
+.cal-staff-name{font-weight:700;color:var(--text2);}
+.cal-staff-val{color:var(--text3);}
+.cal-staff-val b{color:var(--text);font-weight:600;}
+.cal-no-data{font-size:12px;color:var(--text3);text-align:center;padding:16px;}
+/* Range summary KPI */
+.cal-range-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.cal-rkpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;text-align:center;}
+.cal-rkpi-lbl{font-size:11px;color:var(--text3);margin-bottom:4px;}
+.cal-rkpi-val{font-size:18px;font-weight:700;color:var(--gold);}
+.recent-list{margin-bottom:12px;}
+.rec-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.rec-left{display:flex;flex-direction:column;gap:2px;}
+.rec-name{font-size:14px;font-weight:700;}
+.rec-meta{font-size:12px;color:var(--text3);}
+.rec-right{text-align:right;flex-shrink:0;}
+.rec-amount{font-size:16px;font-weight:700;color:var(--gold);}
+.rec-date{font-size:11px;color:var(--text3);}
+
+@media(max-width:480px){
+  .hdr{padding:14px 14px 12px;}
+  .panel{padding:12px 12px 0;}
+  .form-wrap{padding:16px;}
+  .kpi-val{font-size:22px;}
+}
+
+/* ── Floating Staff Button ── */
+.fab-staff{
+  position:fixed;bottom:22px;right:18px;z-index:90;
+  display:flex;align-items:center;gap:8px;
+  background:linear-gradient(135deg,#d97706,#b45309);
+  color:#fff;border:none;border-radius:50px;
+  padding:13px 20px;font-size:14px;font-weight:700;font-family:inherit;
+  box-shadow:0 4px 18px rgba(180,83,9,.45);cursor:pointer;
+  transition:transform .15s,box-shadow .15s;
+}
+.fab-staff:hover{transform:translateY(-2px);box-shadow:0 6px 22px rgba(180,83,9,.55);}
+.fab-staff:active{transform:scale(.96);}
+.fab-icon{font-size:18px;line-height:1;}
+@media(min-width:700px){.fab-txt{display:inline;}}
+
+/* ── Staff Overlay ── */
+.staff-overlay{
+  display:none;position:fixed;inset:0;z-index:150;
+  background:var(--bg);overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.staff-overlay.open{display:block;}
+.staff-ov-hdr{
+  background:linear-gradient(135deg,#170f08,#3a1e0c 55%,#6b3518);
+  padding:16px 18px;display:flex;justify-content:space-between;
+  align-items:center;position:sticky;top:0;z-index:10;
+}
+.staff-close-btn{
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);
+  color:#fff;padding:8px 14px;border-radius:var(--r);font-size:13px;
+  font-weight:600;font-family:inherit;cursor:pointer;
+}
+.staff-close-btn:hover{background:rgba(255,255,255,.2);}
+.staff-ov-body{max-width:600px;margin:0 auto;padding:18px 16px 60px;}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ──────────────── HEADER ──────────────── -->
+<header class="hdr">
+  <div class="hdr-left">
+    <div class="tag">▪ 米蘭站 老虎城旗艦店</div>
+    <h1>營運追蹤與績效管理</h1>
+    <div class="sub" id="hdr-date">載入中...</div>
+  </div>
+  <div class="hdr-right">
+    <select class="msel" id="month-sel" onchange="onMonthChange()"></select>
+    <button class="btn btn-mgr" id="mgr-btn" onclick="openPinModal()">🔐 店長模式</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportExcel()">↓ 匯出</button>
+  </div>
+</header>
+
+<!-- 載入進度條 -->
+<div id="loading-bar" style="display:none;height:3px;background:linear-gradient(90deg,#d97706,#fbbf24,#d97706);background-size:200% 100%;animation:shimmer 1.2s infinite;"></div>
+<style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style>
+
+<!-- ──────────────── TAB BAR ──────────────── -->
+<nav class="tab-bar">
+  <div class="tab-inner">
+    <button class="tab active" onclick="switchTab('overview',this)">📊 月度總覽</button>
+    <button class="tab" onclick="switchTab('entry',this)">📝 每日填報</button>
+    <button class="tab" onclick="switchTab('sales',this)">💼 業務績效</button>
+    <button class="tab" onclick="switchTab('appr',this)">🔍 鑑定績效</button>
+    <button class="tab" onclick="switchTab('targets',this)">🎯 目標管理</button>
+    <button class="tab" onclick="switchTab('records',this)">📋 所有紀錄</button>
+  </div>
+</nav>
+
+<!-- ══════════ TAB: 月度總覽 ══════════ -->
+<div id="panel-overview" class="panel active">
+  <div id="demo-notice" class="notice n-demo" style="display:none">
+    ⚡ 目前顯示示範資料。請至「每日填報」新增真實紀錄，或至「目標管理」設定月份目標。
+  </div>
+
+  <!-- 雙軌業績區塊 -->
+  <div class="dual-track">
+    <div class="dual-col">
+      <div class="dual-hd">📦 營業額 <span>（業務即時填報）</span></div>
+      <div class="kpi-row" style="margin-bottom:0">
+        <div class="kpi">
+          <div class="kpi-lbl">本月營業額合計</div>
+          <div class="kpi-val" id="ov-revenue-amt">—</div>
+          <div class="kpi-sub" id="ov-revenue-sub">業務累積</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-lbl">今日接待組數</div>
+          <div class="kpi-val" id="ov-today-grp">—</div>
+          <div class="kpi-sub" id="ov-today-sub">尚無資料</div>
+        </div>
+      </div>
+    </div>
+    <div class="dual-divider"></div>
+    <div class="dual-col">
+      <div class="dual-hd">💰 毛利 <span>（會計確認入帳・對應目標）</span></div>
+      <div class="kpi-row" style="margin-bottom:0">
+        <div class="kpi">
+          <div class="kpi-lbl">本月毛利合計</div>
+          <div class="kpi-val" id="ov-sale-amt">—</div>
+          <div class="kpi-sub" id="ov-sale-sub">目標 — 萬</div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" id="ov-sale-bar" style="width:0%;background:var(--gold2)"></div></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-lbl">昨日是否已入帳</div>
+          <div class="kpi-val" id="ov-profit-status" style="font-size:18px">—</div>
+          <div class="kpi-sub" id="ov-profit-status-sub">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-lbl">本月鑑定件數</div>
+      <div class="kpi-val" id="ov-appr-cnt">—</div>
+      <div class="kpi-sub" id="ov-appr-sub">尚無資料</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" id="ov-appr-bar" style="width:0%;background:var(--green)"></div></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">直播場次進度</div>
+      <div class="kpi-val" id="ov-live-cnt">—</div>
+      <div class="kpi-sub" id="ov-live-sub">尚無資料</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" id="ov-live-bar" style="width:0%;background:var(--blue)"></div></div>
+    </div>
+  </div>
+
+  <div class="ring-row">
+    <div class="ring-card">
+      <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.9" fill="none" stroke="#e6e0d4" stroke-width="3"/><circle id="ring-total-fill" cx="18" cy="18" r="15.9" fill="none" stroke="#d97706" stroke-width="3" stroke-dasharray="0 100" stroke-dashoffset="25" stroke-linecap="round" transform="rotate(-90 18 18)" style="transition:stroke-dasharray .6s"/><text x="18" y="20.5" text-anchor="middle" font-size="7" font-weight="700" fill="#18120a" id="ring-total-pct">0%</text></svg>
+      <div class="ring-lbl">整體業績</div>
+      <div class="ring-vals" id="ring-total-vals">尚未設定目標</div>
+    </div>
+    <div class="ring-card">
+      <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.9" fill="none" stroke="#e6e0d4" stroke-width="3"/><circle id="ring-store-fill" cx="18" cy="18" r="15.9" fill="none" stroke="#0891b2" stroke-width="3" stroke-dasharray="0 100" stroke-dashoffset="25" stroke-linecap="round" transform="rotate(-90 18 18)" style="transition:stroke-dasharray .6s"/><text x="18" y="20.5" text-anchor="middle" font-size="7" font-weight="700" fill="#18120a" id="ring-store-pct">0%</text></svg>
+      <div class="ring-lbl">店面銷售</div>
+      <div class="ring-vals" id="ring-store-vals">尚未設定目標</div>
+    </div>
+    <div class="ring-card">
+      <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.9" fill="none" stroke="#e6e0d4" stroke-width="3"/><circle id="ring-live-fill" cx="18" cy="18" r="15.9" fill="none" stroke="#7c3aed" stroke-width="3" stroke-dasharray="0 100" stroke-dashoffset="25" stroke-linecap="round" transform="rotate(-90 18 18)" style="transition:stroke-dasharray .6s"/><text x="18" y="20.5" text-anchor="middle" font-size="7" font-weight="700" fill="#18120a" id="ring-live-pct">0%</text></svg>
+      <div class="ring-lbl">直播銷售</div>
+      <div class="ring-vals" id="ring-live-vals">尚未設定目標</div>
+    </div>
+    <div class="ring-card">
+      <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.9" fill="none" stroke="#e6e0d4" stroke-width="3"/><circle id="ring-appr-fill" cx="18" cy="18" r="15.9" fill="none" stroke="#059669" stroke-width="3" stroke-dasharray="0 100" stroke-dashoffset="25" stroke-linecap="round" transform="rotate(-90 18 18)" style="transition:stroke-dasharray .6s"/><text x="18" y="20.5" text-anchor="middle" font-size="7" font-weight="700" fill="#18120a" id="ring-appr-pct">0%</text></svg>
+      <div class="ring-lbl">估包目標</div>
+      <div class="ring-vals" id="ring-appr-vals">尚未設定目標</div>
+    </div>
+  </div>
+
+  <div class="forecast" id="forecast-card">
+    <div class="fcst-row"><span class="fcst-lbl">已過天數 / 當月天數</span><span class="fcst-val" id="fcst-days">—</span></div>
+    <div class="fcst-row"><span class="fcst-lbl">每日應達業績 <span style="font-size:11px;font-weight:400;color:var(--text3)">（月目標 ÷ 天數）</span></span><span class="fcst-val" id="fcst-daily">—</span></div>
+    <div class="fcst-row"><span class="fcst-lbl">目前累積業績 <span style="font-size:11px;font-weight:400;color:var(--text3)">（已達成 / 月目標）</span></span><span class="fcst-val" id="fcst-proj">—</span></div>
+    <div class="fcst-row"><span class="fcst-lbl">達標尚差</span><span class="fcst-val" id="fcst-gap">—</span></div>
+    <div class="fcst-row" style="border:none"><span class="fcst-lbl">剩餘天數需日均 <span style="font-size:11px;font-weight:400;color:var(--text3)">（尚差 ÷ 剩餘天數）</span></span><span class="fcst-val" id="fcst-need">—</span></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-hd">
+      <span class="chart-ttl">📅 本月日曆</span>
+      <span style="font-size:12px;color:var(--text3)">點選起訖日期查看區間數據</span>
+    </div>
+    <div class="cal-range-bar">
+      <div class="cal-range-inputs">
+        <div class="cal-range-field">
+          <span class="cal-range-lbl">開始日期</span>
+          <span id="cal-start-lbl" class="cal-range-val">—</span>
+        </div>
+        <div style="color:var(--text3);font-size:13px;padding-top:14px;">→</div>
+        <div class="cal-range-field">
+          <span class="cal-range-lbl">結束日期</span>
+          <span id="cal-end-lbl" class="cal-range-val">—</span>
+        </div>
+      </div>
+      <button class="btn btn-sm" id="cal-clear-btn" onclick="clearCalRange()" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text2);display:none">✕ 清除</button>
+    </div>
+    <div id="cal-grid" class="cal-grid"></div>
+    <div id="cal-detail" class="cal-detail" style="display:none">
+      <div class="cal-detail-hd">
+        <span id="cal-detail-date" style="font-weight:700;font-size:14px"></span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button id="cal-backfill-btn" onclick="openBackfill()" style="display:none;background:var(--gold2);color:#fff;border:none;border-radius:var(--r);padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">＋ 補填整日</button>
+          <button onclick="clearCalRange()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--text3);line-height:1">×</button>
+        </div>
+      </div>
+      <div id="cal-detail-body"></div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-hd"><span class="chart-ttl">📈 本月每日業績趨勢</span></div>
+    <div class="chart-wrap"><canvas id="ch-daily"></canvas></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hd"><div class="sec-hd-l">最新填報紀錄</div><span id="rec-count-lbl" style="font-size:12px;color:var(--text3)"></span></div>
+    <div id="recent-list" class="recent-list"></div>
+  </div>
+</div>
+
+<!-- ══════════ TAB: 每日填報 ══════════ -->
+<div id="panel-entry" class="panel">
+  <div class="form-wrap">
+    <div class="subtabs">
+      <button class="stab active" id="stab-sales" onclick="switchSubtab('sales-form','stab-sales')">💼 業務日報</button>
+      <button class="stab" id="stab-appr" onclick="switchSubtab('appr-form','stab-appr')">🔍 鑑定日報</button>
+      <button class="stab" id="stab-profit" onclick="switchSubtab('profit-form','stab-profit')" style="display:none">💰 毛利入帳</button>
+    </div>
+
+    <!-- 業務日報 -->
+    <div id="sales-form" class="subpanel active">
+      <div class="toast toast-ok" id="sales-toast-ok">✅ 業務日報已送出！</div>
+      <div class="toast toast-err" id="sales-toast-err">⚠ 請填寫所有必填欄位</div>
+      <div class="form-row2">
+        <div class="fg">
+          <label>姓名 <span>*必填</span></label>
+          <select class="fi" id="sf-name"><option value="">— 選擇 —</option></select>
+        </div>
+        <div class="fg">
+          <label>日期 <span>*必填</span></label>
+          <input type="date" class="fi" id="sf-date">
+        </div>
+      </div>
+      <div class="fsec-title">📊 今日客流數據</div>
+      <div class="form-row3">
+        <div class="fg"><label>接待組數</label><input type="number" class="fi" id="sf-groups" placeholder="0" min="0"></div>
+        <div class="fg"><label>試背組數</label><input type="number" class="fi" id="sf-tryon" placeholder="0" min="0"></div>
+        <div class="fg"><label>成交組數</label><input type="number" class="fi" id="sf-sold-cnt" placeholder="0" min="0"></div>
+      </div>
+      <div class="form-row2" style="margin-bottom:0">
+        <div class="fg">
+          <label>未成交組數</label>
+          <input type="number" class="fi" id="sf-nosold-cnt" placeholder="0" min="0">
+        </div>
+        <div class="fg">
+          <label>未成交主因 <span>（可複選）</span></label>
+          <div class="multi-check-box" id="sf-noreason-wrap">
+            <label class="mc-item"><input type="checkbox" value="價格偏高"><span>價格偏高</span></label>
+            <label class="mc-item"><input type="checkbox" value="品相要求"><span>品相要求</span></label>
+            <label class="mc-item"><input type="checkbox" value="款式不符"><span>款式不符</span></label>
+            <label class="mc-item"><input type="checkbox" value="客人需考慮"><span>客人需考慮</span></label>
+            <label class="mc-item"><input type="checkbox" value="無意購買"><span>無意購買</span></label>
+            <label class="mc-item"><input type="checkbox" value="要再比價"><span>要再比價</span></label>
+            <label class="mc-item"><input type="checkbox" value="逛逛"><span>逛逛</span></label>
+            <label class="mc-item mc-other"><input type="checkbox" value="其它" id="sf-other-chk"><span>其它（請文字說明）</span></label>
+            <input type="text" class="fi mc-other-input" id="sf-other-text" placeholder="請說明..." style="display:none;margin-top:6px">
+          </div>
+        </div>
+      </div>
+      <div class="fsec-title">💰 業績金額（營業額）</div>
+      <div class="form-row2">
+        <div class="fg">
+          <label>成交金額／營業額 <span>（元）</span></label>
+          <input type="number" class="fi" id="sf-amount" placeholder="0" min="0">
+        </div>
+        <div class="fg">
+          <label>是否含直播場次</label>
+          <label class="fi-check-row">
+            <input type="checkbox" id="sf-islive">
+            <span class="fi-check-lbl">本日有直播場次</span>
+          </label>
+        </div>
+      </div>
+      <div class="fg" id="live-amount-fg" style="display:none">
+        <label>其中直播金額 <span>（元）</span></label>
+        <input type="number" class="fi" id="sf-live-amt" placeholder="0" min="0">
+      </div>
+      <div class="fsec-title">📱 Line 開發</div>
+      <div class="form-row2">
+        <div class="fg"><label>新加 Line 人數</label><input type="number" class="fi" id="sf-newline" placeholder="0" min="0"></div>
+        <div class="fg"><label>Line 邀約到店數</label><input type="number" class="fi" id="sf-linevisit" placeholder="0" min="0"></div>
+      </div>
+      <div class="fsec-title">📝 備註</div>
+      <div class="fg">
+        <label>備註</label>
+        <textarea class="fi" id="sf-note" rows="2" placeholder="補充說明..." style="resize:vertical;"></textarea>
+      </div>
+      <button class="submit-btn" onclick="submitSales()">送出業務日報</button>
+    </div>
+
+    <!-- 鑑定日報 -->
+    <div id="appr-form" class="subpanel">
+      <div class="toast toast-ok" id="appr-toast-ok">✅ 鑑定日報已送出！</div>
+      <div class="toast toast-err" id="appr-toast-err">⚠ 請填寫所有必填欄位</div>
+      <div class="form-row2">
+        <div class="fg">
+          <label>鑑定人員 <span>*必填</span></label>
+          <select class="fi" id="af-name"><option value="">— 選擇 —</option></select>
+        </div>
+        <div class="fg">
+          <label>日期 <span>*必填</span></label>
+          <input type="date" class="fi" id="af-date">
+        </div>
+      </div>
+      <div class="fsec-title">📦 今日鑑定數據</div>
+      <div class="form-row3">
+        <div class="fg"><label>總鑑定件數</label><input type="number" class="fi" id="af-total" placeholder="0" min="0"></div>
+        <div class="fg"><label>成功收購件數</label><input type="number" class="fi" id="af-bought" placeholder="0" min="0"></div>
+        <div class="fg"><label>平均耗時 <span>（分鐘/件）</span></label><input type="number" class="fi" id="af-avgtime" placeholder="15" min="1"></div>
+      </div>
+      <div class="form-row2">
+        <div class="fg">
+          <label>收購總金額 <span>（元）</span></label>
+          <input type="number" class="fi" id="af-amt" placeholder="0" min="0">
+        </div>
+        <div class="fg">
+          <label>成功寄賣件數</label>
+          <input type="number" class="fi" id="af-consign" placeholder="0" min="0">
+        </div>
+      </div>
+      <div class="fg">
+        <label>未收購主因</label>
+        <select class="fi" id="af-noreason" onchange="togglePriceGap('af-price-gap',this.value)">
+          <option value="">— 選擇（若有未收購）—</option>
+          <option value="價格未達共識">價格未達共識</option>
+          <option>鑑定為仿品</option>
+          <option>品相不符標準</option>
+          <option>客人臨時反悔</option>
+          <option>其他</option>
+        </select>
+      </div>
+      <div class="fg" id="af-price-gap" style="display:none">
+        <label>價格落差說明 <span>（例：客人期望 8000，出價 5000）</span></label>
+        <input type="text" class="fi" id="af-price-gap-txt" placeholder="請說明價格落差區間...">
+      </div>
+      <div class="fg">
+        <label>入庫上架進度</label>
+        <select class="fi" id="af-listing">
+          <option value="">— 選擇 —</option>
+          <option value="已上架">已上架</option>
+          <option value="待處理">待處理</option>
+          <option value="部分上架">部分上架</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>備註</label>
+        <textarea class="fi" id="af-note" rows="2" placeholder="補充說明..." style="resize:vertical;"></textarea>
+      </div>
+      <button class="submit-btn" onclick="submitAppr()">送出鑑定日報</button>
+    </div>
+
+    <!-- 毛利入帳（僅店長模式） -->
+    <div id="profit-form" class="subpanel">
+      <div class="toast toast-ok" id="profit-toast-ok">✅ 毛利已入帳！</div>
+      <div class="toast toast-err" id="profit-toast-err">⚠ 請填寫日期與金額</div>
+      <div class="notice n-info" style="margin-bottom:14px">
+        💡 此欄位供會計確認後填入。通常為隔日結帳後填入前一日毛利。填入後會同步更新月度總覽的毛利達標進度。
+      </div>
+      <div class="form-row2">
+        <div class="fg">
+          <label>入帳日期 <span>*（業績發生日）</span></label>
+          <input type="date" class="fi" id="pf-date">
+        </div>
+        <div class="fg">
+          <label>當日毛利 <span>（元）</span></label>
+          <input type="number" class="fi" id="pf-profit" placeholder="0" min="0">
+        </div>
+      </div>
+      <div class="fg">
+        <label>備註 <span>（可填入營業額供對帳）</span></label>
+        <input type="text" class="fi" id="pf-note" placeholder="例：營業額 125,000 / 毛利率 42%">
+      </div>
+      <div id="profit-history" style="margin-top:16px"></div>
+      <button class="submit-btn" onclick="submitProfit()" style="margin-top:12px">確認入帳</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TAB: 業務績效 ══════════ -->
+<div id="panel-sales" class="panel">
+  <div class="sec">
+    <div class="sec-hd"><div class="sec-hd-l">人員業績排行</div><span id="sales-month-lbl" style="font-size:12px;color:var(--text3)"></span></div>
+    <div class="staff-grid" id="staff-perf-grid"></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-hd"><span class="chart-ttl">📊 業務人員業績對比</span></div>
+    <div class="chart-wrap"><canvas id="ch-staff-bar"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-hd"><span class="chart-ttl">📈 每日接待 / 試背趨勢</span></div>
+    <div class="chart-wrap"><canvas id="ch-reception"></canvas></div>
+  </div>
+  <div class="sec">
+    <div class="sec-hd"><div class="sec-hd-l">📱 Line 開發統計</div></div>
+    <div class="kpi-row" id="line-stats"></div>
+  </div>
+</div>
+
+<!-- ══════════ TAB: 鑑定績效 ══════════ -->
+<div id="panel-appr" class="panel">
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-lbl">本月總鑑定件數</div>
+      <div class="kpi-val" id="ap-total">—</div>
+      <div class="kpi-sub" id="ap-total-sub">目標 — 件</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" id="ap-total-bar" style="width:0%;background:var(--green)"></div></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">成功收購件數</div>
+      <div class="kpi-val" id="ap-bought">—</div>
+      <div class="kpi-sub" id="ap-rate">收購率 —%</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">收購總金額</div>
+      <div class="kpi-val" id="ap-amt">—</div>
+      <div class="kpi-sub">已收購總值</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">已上架率</div>
+      <div class="kpi-val" id="ap-listed">—</div>
+      <div class="kpi-sub">上架完成進度</div>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-hd"><span class="chart-ttl">📈 每日鑑定件數趨勢</span></div>
+    <div class="chart-wrap"><canvas id="ch-appr-trend"></canvas></div>
+  </div>
+  <div class="sec">
+    <div class="sec-hd"><div class="sec-hd-l">鑑定人員詳情</div></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>人員</th><th>鑑定件數</th><th>收購件數</th><th>收購率</th><th>收購金額</th><th>平均耗時</th><th>上架狀態</th></tr></thead>
+        <tbody id="appr-staff-tbl"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-hd"><span class="chart-ttl">未收購原因分析</span></div>
+    <div class="chart-wrap" style="height:180px"><canvas id="ch-appr-reason"></canvas></div>
+  </div>
+</div>
+
+<!-- ══════════ TAB: 目標管理 ══════════ -->
+<div id="panel-targets" class="panel">
+
+  <div class="target-view">
+    <div class="sec-hd" style="margin-bottom:14px"><div class="sec-hd-l">本月目標設定</div><span id="tgt-month-lbl" style="font-size:12px;color:var(--text3)"></span></div>
+
+    <div class="tgt-grid">
+      <div class="tgt-box"><div class="tgt-box-lbl">整體月目標（毛利）</div><div class="tgt-box-val" id="tv-total">—</div><div class="tgt-box-unit">萬元</div></div>
+      <div class="tgt-box"><div class="tgt-box-lbl">門市目標</div><div class="tgt-box-val" id="tv-store">—</div><div class="tgt-box-unit">萬元</div></div>
+      <div class="tgt-box"><div class="tgt-box-lbl">直播目標</div><div class="tgt-box-val" id="tv-live">—</div><div class="tgt-box-unit">萬元</div></div>
+      <div class="tgt-box"><div class="tgt-box-lbl">直播場次</div><div class="tgt-box-val" id="tv-sessions">—</div><div class="tgt-box-unit">場</div></div>
+    </div>
+
+    <div class="live-tracker">
+      <div class="live-hd">🎥 直播場次進度 <span id="live-done-lbl" style="font-size:12px;font-weight:400;color:var(--text3)"></span></div>
+      <div class="live-dots" id="live-dots"></div>
+    </div>
+
+    <div id="live-records-view" style="margin-bottom:14px"></div>
+
+    <div class="tgt-box" style="margin-bottom:14px;text-align:center">
+      <div class="tgt-box-lbl">估包目標（鑑定）</div>
+      <div class="tgt-box-val" id="tv-appr">—</div>
+      <div class="tgt-box-unit">件</div>
+    </div>
+
+    <div class="sec-hd" style="margin-bottom:10px"><div class="sec-hd-l">業務人員目標</div></div>
+    <div class="staff-tgt-tbl" id="staff-tgt-view"></div>
+  </div>
+
+  <!-- ── 店長編輯面板 ── -->
+  <div class="mgr-panel" id="mgr-panel" style="display:none">
+    <div class="mgr-ttl">🔐 店長目標設定</div>
+
+    <div style="margin-bottom:12px">
+      <label style="font-size:13px;font-weight:700;color:var(--text2);display:block;margin-bottom:6px">設定月份</label>
+      <input type="month" class="fi" id="tgt-month-input" style="max-width:200px">
+    </div>
+
+    <div class="fsec-title">店級目標（單位：萬元）</div>
+    <div class="tgt-inp-grid">
+      <div class="tgt-inp-box"><label>整體月目標（毛利）</label><input type="number" id="ti-total" placeholder="370"><div class="unit">萬元</div></div>
+      <div class="tgt-inp-box"><label>門市目標</label><input type="number" id="ti-store" placeholder="306"><div class="unit">萬元</div></div>
+      <div class="tgt-inp-box"><label>直播目標</label><input type="number" id="ti-live" placeholder="64"><div class="unit">萬元</div></div>
+      <div class="tgt-inp-box"><label>直播場次</label><input type="number" id="ti-sessions" placeholder="8"><div class="unit">場</div></div>
+      <div class="tgt-inp-box"><label>估包目標</label><input type="number" id="ti-appr" placeholder="300"><div class="unit">件</div></div>
+    </div>
+
+    <div class="fsec-title">🎥 每場直播紀錄</div>
+    <div id="live-rec-inputs"></div>
+    <button class="btn btn-sm" onclick="addLiveRecRow()" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text2);margin-bottom:14px">＋ 新增場次</button>
+
+    <div class="fsec-title">業務人員個人目標（萬元）</div>
+    <div style="overflow-x:auto;margin-bottom:14px">
+      <div class="stgt-row hd" style="grid-template-columns:1.5fr 1fr 1fr 1fr 1fr">
+        <span>業務姓名</span><span>門市目標</span><span>直播目標</span><span>總目標</span><span>累計業績</span>
+      </div>
+      <div id="staff-tgt-inputs"></div>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-gold" onclick="saveTargets()">💾 儲存目標</button>
+      <button class="btn" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border2)" onclick="closeMgrPanel()">取消</button>
+    </div>
+
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--gold-bdr)">
+      <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">修改店長密碼</div>
+      <div class="form-row3" style="max-width:400px">
+        <div class="fg"><label>目前密碼</label><input type="password" class="fi" id="pin-old" placeholder="••••"></div>
+        <div class="fg"><label>新密碼</label><input type="password" class="fi" id="pin-new" placeholder="••••"></div>
+        <div class="fg"><label style="opacity:0">_</label><button class="btn btn-gold" onclick="changePin()" style="width:100%;padding:11px">修改</button></div>
+      </div>
+      <div id="pin-msg" style="font-size:13px;margin-top:6px"></div>
+    </div>
+  </div>
+
+  <div id="mgr-login-prompt" class="notice n-info" style="margin-bottom:0">
+    🔒 如需修改目標，請點擊右上角「店長模式」按鈕輸入密碼。
+  </div>
+</div>
+
+<!-- ══════════ TAB: 所有紀錄 ══════════ -->
+<div id="panel-records" class="panel">
+  <div class="tbl-toolbar">
+    <select class="fi" id="rec-type-filter" style="width:auto;padding:7px 12px;font-size:13px" onchange="renderRecordsTab(pageCache.sales,pageCache.appraisal)">
+      <option value="all">全部類型</option>
+      <option value="sales">業務日報</option>
+      <option value="appraisal">鑑定日報</option>
+    </select>
+    <select class="fi" id="rec-staff-filter" style="width:auto;padding:7px 12px;font-size:13px" onchange="renderRecordsTab(pageCache.sales,pageCache.appraisal)">
+      <option value="all">全部人員</option>
+    </select>
+    <button class="btn btn-gold btn-sm" onclick="exportExcel()">↓ 匯出 Excel</button>
+    <span id="rec-count" style="font-size:12px;color:var(--text3);margin-left:auto"></span>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>類型</th><th>日期</th><th>姓名</th>
+          <th>接待/鑑定</th><th>成交/收購</th><th>金額</th>
+          <th>直播</th><th>Line+</th><th>備註</th>
+          <th id="mgr-note-th" style="display:none">店長備註</th>
+        </tr>
+      </thead>
+      <tbody id="records-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- .page -->
+
+<!-- ──────────────── FLOATING STAFF BUTTON ──────────────── -->
+<button class="fab-staff" onclick="openStaffMode()" title="員工快速填報">
+  <span class="fab-icon">📝</span>
+  <span class="fab-txt">員工填報</span>
+</button>
+
+<!-- ──────────────── STAFF OVERLAY ──────────────── -->
+<div id="staff-overlay" class="staff-overlay">
+  <div class="staff-ov-hdr">
+    <div>
+      <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:3px">米蘭站 老虎城旗艦店</div>
+      <div style="font-size:17px;font-weight:700;color:#fff">📝 每日填報</div>
+    </div>
+    <button class="staff-close-btn" onclick="closeStaffMode()">✕ 關閉</button>
+  </div>
+  <div class="staff-ov-body">
+    <div class="subtabs" style="margin-bottom:18px">
+      <button class="stab active" id="ov-stab-sales" onclick="switchOvSubtab('ov-sales','ov-stab-sales')">💼 業務日報</button>
+      <button class="stab" id="ov-stab-appr" onclick="switchOvSubtab('ov-appr','ov-stab-appr')">🔍 鑑定日報</button>
+    </div>
+    <div id="ov-sales" class="subpanel active">
+      <div class="toast toast-ok" id="ov-sales-ok">✅ 業務日報已送出！資料已記錄。</div>
+      <div class="toast toast-err" id="ov-sales-err">⚠ 請填寫姓名與日期</div>
+      <div class="form-row2">
+        <div class="fg"><label>姓名 <span>*</span></label><select class="fi" id="ov-sf-name"><option value="">— 選擇 —</option></select></div>
+        <div class="fg"><label>日期 <span>*</span></label><input type="date" class="fi" id="ov-sf-date"></div>
+      </div>
+      <div class="fsec-title">📊 今日客流</div>
+      <div class="form-row3">
+        <div class="fg"><label>接待組數</label><input type="number" class="fi" id="ov-sf-groups" placeholder="0" min="0"></div>
+        <div class="fg"><label>試背組數</label><input type="number" class="fi" id="ov-sf-tryon" placeholder="0" min="0"></div>
+        <div class="fg"><label>成交組數</label><input type="number" class="fi" id="ov-sf-soldcnt" placeholder="0" min="0"></div>
+      </div>
+      <div class="form-row2" style="margin-bottom:0">
+        <div class="fg">
+          <label>未成交組數</label>
+          <input type="number" class="fi" id="ov-sf-nosold-cnt" placeholder="0" min="0">
+        </div>
+        <div class="fg">
+          <label>未成交主因 <span>（可複選）</span></label>
+          <div class="multi-check-box" id="ov-sf-noreason-wrap">
+            <label class="mc-item"><input type="checkbox" value="價格偏高"><span>價格偏高</span></label>
+            <label class="mc-item"><input type="checkbox" value="品相要求"><span>品相要求</span></label>
+            <label class="mc-item"><input type="checkbox" value="款式不符"><span>款式不符</span></label>
+            <label class="mc-item"><input type="checkbox" value="客人需考慮"><span>客人需考慮</span></label>
+            <label class="mc-item"><input type="checkbox" value="無意購買"><span>無意購買</span></label>
+            <label class="mc-item"><input type="checkbox" value="要再比價"><span>要再比價</span></label>
+            <label class="mc-item"><input type="checkbox" value="逛逛"><span>逛逛</span></label>
+            <label class="mc-item mc-other"><input type="checkbox" value="其它" id="ov-sf-other-chk"><span>其它（請文字說明）</span></label>
+            <input type="text" class="fi mc-other-input" id="ov-sf-other-text" placeholder="請說明..." style="display:none;margin-top:6px">
+          </div>
+        </div>
+      </div>
+      <div class="fsec-title">💰 業績金額（營業額）</div>
+      <div class="form-row2">
+        <div class="fg"><label>成交金額／營業額 <span>（元）</span></label><input type="number" class="fi" id="ov-sf-amount" placeholder="0" min="0"></div>
+        <div class="fg"><label>是否有直播</label>
+          <label class="fi-check-row">
+            <input type="checkbox" id="ov-sf-islive" onchange="document.getElementById('ov-live-fg').style.display=this.checked?'':'none'">
+            <span class="fi-check-lbl">本日有直播</span>
+          </label>
+        </div>
+      </div>
+      <div class="fg" id="ov-live-fg" style="display:none">
+        <label>直播金額 <span>（元）</span></label>
+        <input type="number" class="fi" id="ov-sf-liveamt" placeholder="0" min="0">
+      </div>
+      <div class="fsec-title">📱 Line 開發</div>
+      <div class="form-row2">
+        <div class="fg"><label>新加 Line 人數</label><input type="number" class="fi" id="ov-sf-newline" placeholder="0" min="0"></div>
+        <div class="fg"><label>Line 邀約到店數</label><input type="number" class="fi" id="ov-sf-linevisit" placeholder="0" min="0"></div>
+      </div>
+      <div class="fsec-title">📝 備註</div>
+      <div class="fg"><label>備註</label><textarea class="fi" id="ov-sf-note" rows="2" placeholder="補充說明..." style="resize:vertical"></textarea></div>
+      <button class="submit-btn" onclick="submitOvSales()">送出業務日報</button>
+    </div>
+    <div id="ov-appr" class="subpanel">
+      <div class="toast toast-ok" id="ov-appr-ok">✅ 鑑定日報已送出！資料已記錄。</div>
+      <div class="toast toast-err" id="ov-appr-err">⚠ 請填寫姓名與日期</div>
+      <div class="form-row2">
+        <div class="fg"><label>鑑定人員 <span>*</span></label><select class="fi" id="ov-af-name"><option value="">— 選擇 —</option></select></div>
+        <div class="fg"><label>日期 <span>*</span></label><input type="date" class="fi" id="ov-af-date"></div>
+      </div>
+      <div class="fsec-title">📦 今日鑑定</div>
+      <div class="form-row3">
+        <div class="fg"><label>總鑑定件數</label><input type="number" class="fi" id="ov-af-total" placeholder="0" min="0"></div>
+        <div class="fg"><label>成功收購件數</label><input type="number" class="fi" id="ov-af-bought" placeholder="0" min="0"></div>
+        <div class="fg"><label>平均耗時 <span>（分鐘）</span></label><input type="number" class="fi" id="ov-af-avgtime" placeholder="15" min="1"></div>
+      </div>
+      <div class="form-row2">
+        <div class="fg"><label>收購總金額 <span>（元）</span></label><input type="number" class="fi" id="ov-af-amt" placeholder="0" min="0"></div>
+        <div class="fg"><label>成功寄賣件數</label><input type="number" class="fi" id="ov-af-consign" placeholder="0" min="0"></div>
+      </div>
+      <div class="fg"><label>未收購主因</label>
+        <select class="fi" id="ov-af-noreason" onchange="togglePriceGap('ov-af-price-gap',this.value)">
+          <option value="">— 選擇（若有未收購）—</option>
+          <option value="價格未達共識">價格未達共識</option>
+          <option>鑑定為仿品</option>
+          <option>品相不符標準</option>
+          <option>客人臨時反悔</option>
+          <option>其他</option>
+        </select>
+      </div>
+      <div class="fg" id="ov-af-price-gap" style="display:none">
+        <label>價格落差說明 <span>（例：客人期望 8000，出價 5000）</span></label>
+        <input type="text" class="fi" id="ov-af-price-gap-txt" placeholder="請說明價格落差區間...">
+      </div>
+      <div class="fg"><label>入庫上架進度</label>
+        <select class="fi" id="ov-af-listing">
+          <option value="">— 選擇 —</option>
+          <option value="已上架">已上架</option>
+          <option value="待處理">待處理</option>
+          <option value="部分上架">部分上架</option>
+        </select>
+      </div>
+      <div class="fg"><label>備註</label><textarea class="fi" id="ov-af-note" rows="2" placeholder="補充說明..." style="resize:vertical"></textarea></div>
+      <button class="submit-btn" onclick="submitOvAppr()">送出鑑定日報</button>
+    </div>
+  </div>
+</div>
+
+<!-- ──────────────── PIN MODAL ──────────────── -->
+<div class="modal-bg" id="pin-modal">
+  <div class="modal">
+    <h3>🔐 店長模式</h3>
+    <p>請輸入店長密碼（預設：0000）</p>
+    <input type="password" id="pin-input" class="fi" maxlength="8" placeholder="••••" onkeydown="if(event.key==='Enter')tryPin()">
+    <div class="pin-err" id="pin-err">密碼錯誤，請再試一次</div>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button class="btn btn-gold" onclick="tryPin()">確認</button>
+      <button class="btn" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border2)" onclick="closePinModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ──────────────── 補填整日 MODAL ──────────────── -->
+<div class="modal-bg" id="backfill-modal">
+  <div class="modal" style="max-width:460px;width:100%;text-align:left;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <h3 style="font-size:16px">📋 補填整日資料</h3>
+      <button onclick="closeBackfill()" style="border:none;background:none;cursor:pointer;font-size:20px;color:var(--text3);line-height:1">×</button>
+    </div>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:16px">以「門市整體」補填，資料會合併進統計</p>
+    <div class="fg">
+      <label>補填日期</label>
+      <input type="date" class="fi" id="bf-date" readonly style="background:var(--surface2)">
+    </div>
+    <div class="fsec-title" style="margin-top:12px">💰 門市整體業績</div>
+    <div class="form-row2">
+      <div class="fg">
+        <label>營業額 <span>（元）</span></label>
+        <input type="number" class="fi" id="bf-revenue" placeholder="0" min="0">
+      </div>
+      <div class="fg">
+        <label>門市整體毛利 <span>（元）</span></label>
+        <input type="number" class="fi" id="bf-profit" placeholder="0" min="0">
+      </div>
+    </div>
+    <div class="fsec-title">👥 來客數據</div>
+    <div class="form-row2">
+      <div class="fg">
+        <label>來店客組數</label>
+        <input type="number" class="fi" id="bf-groups" placeholder="0" min="0">
+      </div>
+      <div class="fg">
+        <label>估價組數</label>
+        <input type="number" class="fi" id="bf-appr" placeholder="0" min="0">
+      </div>
+    </div>
+    <div class="fsec-title">👤 人員個人毛利</div>
+    <div class="notice n-info" style="margin-bottom:10px;font-size:11px">填入後可與個人毛利目標對比，不填則跳過</div>
+    <div id="bf-staff-profit-list"></div>
+    <button onclick="addBfStaffRow()" style="font-size:12px;color:var(--gold);background:none;border:1px dashed var(--gold-bdr);border-radius:var(--r);padding:6px 12px;cursor:pointer;width:100%;margin-bottom:10px">＋ 新增人員毛利</button>
+    <div class="fg">
+      <label>備註</label>
+      <input type="text" class="fi" id="bf-note" placeholder="補充說明...">
+    </div>
+    <div id="bf-toast-err" class="toast toast-err" style="margin-bottom:8px">⚠ 請至少填入一項數據</div>
+    <div style="display:flex;gap:8px">
+      <button class="submit-btn" onclick="submitBackfill()" style="margin-top:0;flex:1">確認補填</button>
+      <button onclick="closeBackfill()" style="flex:0 0 80px;padding:15px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2);color:var(--text2);font-size:14px;font-weight:600;cursor:pointer">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ──────────────── 刪除確認 MODAL ──────────────── -->
+<div class="modal-bg" id="del-confirm-modal">
+  <div class="modal" style="max-width:300px">
+    <div style="font-size:32px;margin-bottom:8px">🗑️</div>
+    <h3 style="font-size:16px;margin-bottom:8px">確認刪除？</h3>
+    <p id="del-confirm-msg" style="font-size:13px;color:var(--text3);margin-bottom:20px">此操作無法復原</p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button id="del-confirm-ok" class="btn btn-danger" style="flex:1;padding:12px;justify-content:center">確認刪除</button>
+      <button onclick="document.getElementById('del-confirm-modal').classList.remove('show')" class="btn" style="flex:1;padding:12px;background:var(--surface2);color:var(--text2);border:1px solid var(--border2);justify-content:center">取消</button>
+    </div>
+  </div>
+</div>
+<script>
+// ═══════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════
+const STAFF      = ['KEVIN','LEO','MINI','ZOE','PHYLLIS','BEBE','CHLOE','EVAN','阿鴻','偉恩','NINA','怡嘉','RICK','RITA','其他'];
+const SALES_PERF_STAFF = ['KEVIN','PHYLLIS','LEO','ZOE','BEBE','CHLOE','MINI'];
+const APPR_STAFF = ['EVAN','阿鴻','偉恩','NINA','RICK'];
+const KEY_RECORDS = 'tiger-ops-records';
+const KEY_TARGETS = 'tiger-ops-targets';
+const KEY_PIN     = 'tiger-ops-pin';
+const KEY_LIVE    = 'tiger-ops-live';
+
+const IS_GAS = (function(){
+  try { return typeof google !== 'undefined' && !!google.script; }
+  catch(e){ return false; }
+})();
+
+// ═══════════════════════════════════════════
+// DATA LAYER
+// ═══════════════════════════════════════════
+const DB = {
+  load(ym, cb) {
+    if (IS_GAS) {
+      google.script.run
+        .withSuccessHandler(cb)
+        .withFailureHandler(e => {
+          console.error('GAS load error:', e);
+          cb({ records:{ sales:[], appraisal:[] }, targets:null, liveDone:0 });
+        })
+        .getAllData(ym);
+    } else {
+      const recs = JSON.parse(localStorage.getItem(KEY_RECORDS)||'[]');
+      const tgts = JSON.parse(localStorage.getItem(KEY_TARGETS)||'{}');
+      const live = JSON.parse(localStorage.getItem(KEY_LIVE)||'{}');
+      cb({
+        records: {
+          sales:     recs.filter(r => r.type==='sales'     && r.date && r.date.startsWith(ym)),
+          appraisal: recs.filter(r => r.type==='appraisal' && r.date && r.date.startsWith(ym))
+        },
+        targets:  tgts[ym] || null,
+        liveDone: live[ym] || 0
+      });
+    }
+  },
+  saveRecord(rec, cb) {
+    if (IS_GAS) {
+      google.script.run
+        .withSuccessHandler(() => cb && cb())
+        .withFailureHandler(e => { console.error('saveRecord error:', e); cb && cb(); })
+        .saveRecord(rec);
+    } else {
+      const recs = JSON.parse(localStorage.getItem(KEY_RECORDS)||'[]');
+      const idx = recs.findIndex(r => String(r.id) === String(rec.id));
+      if (idx >= 0) recs[idx] = rec;
+      else recs.push(rec);
+      localStorage.setItem(KEY_RECORDS, JSON.stringify(recs));
+      cb && cb();
+    }
+  },
+  saveTargets(ym, data, cb) {
+    if (IS_GAS) {
+      google.script.run
+        .withSuccessHandler(() => cb && cb())
+        .withFailureHandler(e => { console.error('saveTargets error:', e); cb && cb(); })
+        .saveTargets(ym, data);
+    } else {
+      const tgts = JSON.parse(localStorage.getItem(KEY_TARGETS)||'{}');
+      tgts[ym] = data;
+      localStorage.setItem(KEY_TARGETS, JSON.stringify(tgts));
+      cb && cb();
+    }
+  },
+  setLiveDone(ym, n, cb) {
+    if (IS_GAS) {
+      google.script.run
+        .withSuccessHandler(() => cb && cb())
+        .withFailureHandler(() => cb && cb())
+        .setLiveDone(ym, n);
+    } else {
+      const live = JSON.parse(localStorage.getItem(KEY_LIVE)||'{}');
+      live[ym] = n;
+      localStorage.setItem(KEY_LIVE, JSON.stringify(live));
+      cb && cb();
+    }
+  },
+  checkPin(pin, cb) {
+    if (IS_GAS) {
+      google.script.run.withSuccessHandler(ok => cb(ok)).checkPin(pin);
+    } else {
+      cb(pin === (localStorage.getItem(KEY_PIN)||'0000'));
+    }
+  },
+  savePin(pin, cb) {
+    if (IS_GAS) {
+      google.script.run.withSuccessHandler(() => cb && cb()).savePin(pin);
+    } else {
+      localStorage.setItem(KEY_PIN, pin);
+      cb && cb();
+    }
+  },
+  updateMgrNote(id, val, type, cb) {
+    if (IS_GAS) {
+      google.script.run
+        .withSuccessHandler(() => cb && cb())
+        .withFailureHandler(() => cb && cb())
+        .updateMgrNote(id, val, type);
+    } else {
+      const recs = JSON.parse(localStorage.getItem(KEY_RECORDS)||'[]');
+      const r = recs.find(r => r.id === id);
+      if (r) { r.mgrNote = val; localStorage.setItem(KEY_RECORDS, JSON.stringify(recs)); }
+      cb && cb();
+    }
+  },
+  deleteRecord(id, type, cb) {
+    if (IS_GAS) {
+      google.script.run
+        .withSuccessHandler(() => cb && cb())
+        .withFailureHandler(e => { console.error('deleteRecord error:', e); cb && cb(); })
+        .deleteRecord(id, type);
+    } else {
+      const recs = JSON.parse(localStorage.getItem(KEY_RECORDS)||'[]');
+      localStorage.setItem(KEY_RECORDS, JSON.stringify(recs.filter(r => String(r.id) !== String(id))));
+      cb && cb();
+    }
+  },
+  saveProfitWithStaff(date, amount, note, staffProfit, cb) {
+    if (IS_GAS) {
+      google.script.run
+        .withSuccessHandler(() => cb && cb())
+        .withFailureHandler(e => { console.error('saveProfitWithStaff error:', e); cb && cb(); })
+        .saveProfitWithStaff(date, amount, note, staffProfit);
+    } else {
+      const key = 'tiger-profit';
+      const data = JSON.parse(localStorage.getItem(key)||'{}');
+      if (amount === 0 && (!staffProfit || Object.keys(staffProfit).length === 0)) {
+        delete data[date];
+      } else {
+        data[date] = { amount, note: note || '', staffProfit: staffProfit || {} };
+      }
+      localStorage.setItem(key, JSON.stringify(data));
+      cb && cb();
+    }
+  },
+  saveProfit(date, amount, note, cb) {
+    if (IS_GAS) {
+      google.script.run
+        .withSuccessHandler(() => cb && cb())
+        .withFailureHandler(e => { console.error('saveProfit error:', e); cb && cb(); })
+        .saveProfit(date, amount, note);
+    } else {
+      const key = 'tiger-profit';
+      const data = JSON.parse(localStorage.getItem(key)||'{}');
+      if (note === '__deleted__' || amount === 0) {
+        delete data[date];
+      } else {
+        const existing = data[date] || {};
+        data[date] = { ...existing, amount, note: note || '' };
+      }
+      localStorage.setItem(key, JSON.stringify(data));
+      cb && cb();
+    }
+  },
+  loadProfit(ym, cb) {
+    if (IS_GAS) {
+      google.script.run
+        .withSuccessHandler(result => cb(result || {}))
+        .withFailureHandler(e => { console.error('loadProfit error:', e); cb({}); })
+        .loadProfit(ym);
+    } else {
+      try {
+        const key = 'tiger-profit';
+        const data = JSON.parse(localStorage.getItem(key)||'{}');
+        const result = {};
+        Object.entries(data).forEach(([d, v]) => {
+          if (d.startsWith(ym) && v.amount > 0) result[d] = v;
+        });
+        cb(result);
+      } catch(e) { cb({}); }
+    }
+  }
+};
+
+let activeMonth = '';
+let isManager   = false;
+let charts      = {};
+let pageCache   = { sales:[], appraisal:[] };
+window.STAFF_LIST = ['KEVIN','LEO','MINI','ZOE','PHYLLIS','BEBE','CHLOE','EVAN','阿鴻','偉恩','NINA','怡嘉','RICK','RITA','其他'];
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  const now  = new Date();
+  const days = ['日','一','二','三','四','五','六'];
+  document.getElementById('hdr-date').textContent =
+    `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（週${days[now.getDay()]}）`;
+
+  const sel = document.getElementById('month-sel');
+  for (let i = 0; i <= 5; i++) {
+    const d   = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const ym  = fmtYM(d);
+    const opt = document.createElement('option');
+    opt.value = ym;
+    opt.textContent = `${d.getFullYear()}年${d.getMonth()+1}月`;
+    sel.appendChild(opt);
+  }
+  activeMonth = fmtYM(now);
+  sel.value   = activeMonth;
+
+  ['sf-name'].forEach(id => {
+    const el = document.getElementById(id);
+    STAFF.forEach(s => { const o = document.createElement('option'); o.value=s; o.textContent=s; el.appendChild(o); });
+  });
+  const afEl = document.getElementById('af-name');
+  APPR_STAFF.forEach(s => { const o = document.createElement('option'); o.value=s; o.textContent=s; afEl.appendChild(o); });
+
+  const rfEl = document.getElementById('rec-staff-filter');
+  [...STAFF, ...APPR_STAFF].forEach(s => { const o = document.createElement('option'); o.value=s; o.textContent=s; rfEl.appendChild(o); });
+
+  const today = now.toISOString().slice(0, 10);
+  document.getElementById('sf-date').value = today;
+  document.getElementById('af-date').value = today;
+  document.getElementById('tgt-month-input').value = activeMonth;
+
+  const yesterday = new Date(now - 86400000).toISOString().slice(0, 10);
+  const pfDate = document.getElementById('pf-date');
+  if (pfDate) pfDate.value = yesterday;
+
+  document.getElementById('sf-islive').addEventListener('change', e => {
+    document.getElementById('live-amount-fg').style.display = e.target.checked ? '' : 'none';
+  });
+
+  STAFF.forEach(s => { const o=document.createElement('option'); o.value=s; o.textContent=s; document.getElementById('ov-sf-name').appendChild(o); });
+  APPR_STAFF.forEach(s => { const o=document.createElement('option'); o.value=s; o.textContent=s; document.getElementById('ov-af-name').appendChild(o); });
+  document.getElementById('ov-sf-date').value = today;
+  document.getElementById('ov-af-date').value = today;
+
+  if (!IS_GAS) {
+    const saved = JSON.parse(localStorage.getItem(KEY_RECORDS)||'[]');
+    if (saved.length === 0) {
+      injectDemoData();
+      document.getElementById('demo-notice').style.display = '';
+    }
+  }
+
+  ['sf-other-chk','ov-sf-other-chk'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', () => {
+      const txtId = id.replace('-chk','-text');
+      const txt = document.getElementById(txtId);
+      if (txt) txt.style.display = el.checked ? '' : 'none';
+    });
+  });
+
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.del-rec-btn');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const id   = btn.getAttribute('data-rid');
+    const type = btn.getAttribute('data-rtype');
+    if (!id || !type) return;
+    showDelConfirm(id, type);
+  }, true);
+
+  renderAll();
+});
+
+// ═══════════════════════════════════════════
+// DEMO DATA
+// ═══════════════════════════════════════════
+function injectDemoData() {
+  const records  = [];
+  const noSale   = ['價格偏高','品相要求','款式不符','客人需考慮','無意購買','其他'];
+  const noBuy    = ['價格未達共識','鑑定為仿品','品相不符標準','客人臨時反悔','其他'];
+  const rand     = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+  const pick     = arr  => arr[rand(0,arr.length-1)];
+
+  for (let d = 1; d <= 28; d++) {
+    const date = `2026-04-${String(d).padStart(2,'0')}`;
+    if (d % 7 === 0) continue;
+    const salesStaff = [...STAFF].sort(()=>Math.random()-.5).slice(0,rand(2,4));
+    salesStaff.forEach(staff => {
+      const groups  = rand(3,10);
+      const tryon   = rand(1,groups);
+      const soldCnt = rand(0,2);
+      const isLive  = d % 9 === 0 && staff === 'KEVIN';
+      const amount  = soldCnt > 0 ? rand(2,9)*10000+rand(0,9)*1000 : 0;
+      const liveAmt = isLive ? rand(1,4)*10000 : 0;
+      records.push({ id:`demo-s-${d}-${staff}`, type:'sales', date, staff,
+        groups, tryon, soldCnt, noSoldCnt:Math.max(0, groups-soldCnt),
+        amount:amount+liveAmt, isLive, liveAmt,
+        newLine:rand(0,4), lineVisit:rand(0,2),
+        noReason:soldCnt===0&&groups>2?pick(noSale):'', note:'', mgrNote:'' });
+    });
+    const apprStaff = [...APPR_STAFF].sort(()=>Math.random()-.5).slice(0,rand(1,2));
+    apprStaff.forEach(staff => {
+      const total  = rand(3,10);
+      const bought = rand(1,total);
+      records.push({ id:`demo-a-${d}-${staff}`, type:'appraisal', date, staff,
+        totalCount:total, bought, buyAmt:bought*rand(8,25)*1000,
+        noReason:bought<total?pick(noBuy):'', avgTime:rand(10,25),
+        listing:Math.random()>0.25?'已上架':'待處理', note:'', mgrNote:'' });
+    });
+  }
+  const tgts = JSON.parse(localStorage.getItem(KEY_TARGETS)||'{}');
+  if (!tgts['2026-04']) {
+    tgts['2026-04'] = { total:370, store:306, live:64, sessions:8, appr:300,
+      staff:{KEVIN:70,LEO:60,MINI:50,ZOE:50,PHYLLIS:50,BEBE:50,CHLOE:40} };
+    localStorage.setItem(KEY_TARGETS, JSON.stringify(tgts));
+  }
+  const live = JSON.parse(localStorage.getItem(KEY_LIVE)||'{}');
+  live['2026-04'] = 3;
+  localStorage.setItem(KEY_LIVE, JSON.stringify(live));
+  localStorage.setItem(KEY_RECORDS, JSON.stringify(records));
+}
+
+// ═══════════════════════════════════════════
+// RENDER ALL
+// ═══════════════════════════════════════════
+function renderAll() {
+  const ym = activeMonth;
+  document.getElementById('loading-bar').style.display = '';
+  DB.load(ym, data => {
+    const sRecs    = data.records.sales    || [];
+    const aRecs    = data.records.appraisal|| [];
+    const tgt      = data.targets;
+    const liveDone = data.liveDone || 0;
+    pageCache = { sales: sRecs, appraisal: aRecs };
+
+    const doRender = (profitMap) => {
+      document.getElementById('loading-bar').style.display = 'none';
+      pageCache.profit = profitMap || {};
+      renderOverviewTab(sRecs, aRecs, tgt, liveDone, profitMap || {});
+      renderSalesTab(sRecs, tgt, profitMap || {});
+      renderApprTab(aRecs, tgt);
+      renderTargetsTab(tgt, liveDone, sRecs, profitMap || {});
+      renderRecordsTab(sRecs, aRecs);
+      renderProfitHistory(profitMap || {}, ym);
+    };
+
+    try {
+      DB.loadProfit(ym, profitMap => doRender(profitMap));
+    } catch(e) {
+      console.error('loadProfit failed:', e);
+      doRender({});
+    }
+  });
+}
+
+// ═══════════════════════════════════════════
+// OVERVIEW TAB
+// ═══════════════════════════════════════════
+function renderOverviewTab(sRecs, aRecs, tgt, liveDone, profitMap) {
+  profitMap = profitMap || {};
+  const ym = activeMonth;
+  const [yr, mo] = ym.split('-').map(Number);
+  const today = new Date();
+  const isCurrentMonth = (today.getFullYear()===yr && today.getMonth()+1===mo);
+  const daysInMonth = new Date(yr, mo, 0).getDate();
+  const daysPassed  = isCurrentMonth ? today.getDate() : daysInMonth;
+
+  // ★ Bug 2 修復：明確只加 type==='sales' 的紀錄，收購金額（buyAmt）只存在 appraisal 物件，不會流入此處
+  const totalRevenue = sRecs.reduce((s,r) => s + (r.type === 'sales' ? (r.amount||0) : 0), 0);
+  const liveSale     = sRecs.reduce((s,r) => s + (r.isLive ? (r.liveAmt||0) : 0), 0);
+  const storeSale    = totalRevenue - liveSale;
+
+  const totalProfit  = Object.values(profitMap).reduce((s,v) => s + (v.amount||0), 0);
+
+  const todayStr     = today.toISOString().slice(0,10);
+  const yesterdayStr = new Date(today - 86400000).toISOString().slice(0,10);
+  const todayRecs    = sRecs.filter(r => r.date === todayStr);
+  const todayGrps    = todayRecs.reduce((s,r) => s + (r.groups||0), 0);
+
+  set('ov-revenue-amt', fmtW(totalRevenue));
+  set('ov-revenue-sub', `店面 ${fmtW(storeSale)} ／ 直播 ${fmtW(liveSale)}`);
+
+  set('ov-today-grp', todayGrps+'組');
+  set('ov-today-sub', `今日 ${todayRecs.length} 筆填報`);
+
+  set('ov-sale-amt', fmtW(totalProfit));
+  set('ov-sale-sub', tgt
+    ? `目標 ${tgt.total}萬 · ${Math.min(100,(totalProfit/(tgt.total*10000))*100).toFixed(0)}%`
+    : '尚未設定目標');
+  if (tgt) setBar('ov-sale-bar', totalProfit, tgt.total*10000);
+
+  const ydProfit = profitMap[yesterdayStr];
+  if (isCurrentMonth && today.getDate() > 1) {
+    if (ydProfit) {
+      set('ov-profit-status', `<span class="profit-ok">✅</span>`);
+      set('ov-profit-status-sub', `${parseInt(yesterdayStr.slice(-2))}日已入帳 ${fmtW(ydProfit.amount)}`);
+    } else {
+      set('ov-profit-status', `<span class="profit-miss">⚠️</span>`);
+      set('ov-profit-status-sub', `${parseInt(yesterdayStr.slice(-2))}日尚未入帳`);
+    }
+  } else {
+    set('ov-profit-status', '—');
+    set('ov-profit-status-sub', '');
+  }
+
+  const totalAppr = aRecs.reduce((s,r) => s + (r.totalCount||0), 0);
+  set('ov-appr-cnt', totalAppr+'件');
+  set('ov-appr-sub', tgt
+    ? `目標 ${tgt.appr} 件 · ${Math.min(100,(totalAppr/tgt.appr)*100).toFixed(0)}%`
+    : '尚未設定目標');
+  if (tgt) setBar('ov-appr-bar', totalAppr, tgt.appr);
+
+  set('ov-live-cnt', liveDone+'場');
+  set('ov-live-sub', tgt
+    ? `目標 ${tgt.sessions} 場 · ${Math.min(100,(liveDone/tgt.sessions)*100).toFixed(0)}%`
+    : '尚未設定');
+  if (tgt) setBar('ov-live-bar', liveDone, tgt.sessions);
+
+  if (tgt) {
+    setRing('ring-total', totalProfit, tgt.total*10000);
+    document.getElementById('ring-total-vals').textContent = `毛利 ${fmtW(totalProfit)} / ${tgt.total}萬`;
+    setRing('ring-store', storeSale, tgt.store*10000);
+    document.getElementById('ring-store-vals').textContent = `店面營業額 ${fmtW(storeSale)} / ${tgt.store}萬`;
+    setRing('ring-live', liveSale, tgt.live*10000);
+    document.getElementById('ring-live-vals').textContent = `直播 ${fmtW(liveSale)} / ${tgt.live}萬`;
+    setRing('ring-appr', totalAppr, tgt.appr);
+    document.getElementById('ring-appr-vals').textContent = `${totalAppr} / ${tgt.appr}件`;
+  } else {
+    ['total','store','live','appr'].forEach(k => {
+      document.getElementById(`ring-${k}-vals`).textContent = '尚未設定目標';
+      document.getElementById(`ring-${k}-pct`).textContent  = '0%';
+    });
+  }
+
+  if (tgt && daysPassed > 0) {
+    const tgtAmt   = tgt.total * 10000;
+    const dailyTgt = Math.ceil(tgtAmt / daysInMonth / 10000) * 10000;
+    const achPct   = Math.min(100, (totalProfit / tgtAmt * 100)).toFixed(1);
+    const gap      = tgtAmt - totalProfit;
+    const remain   = daysInMonth - daysPassed;
+    const need     = remain > 0 ? Math.ceil(gap / remain) : 0;
+    const fc = (v,cls) => `<span class="${cls}">${v}</span>`;
+    set('fcst-days',  `${daysPassed} / ${daysInMonth} 天`);
+    set('fcst-daily', `${fmtW(dailyTgt)} / 天`);
+    const projClass = achPct >= 100 ? 'c-green' : achPct >= 50 ? 'c-gold' : 'c-red';
+    set('fcst-proj', fc(`毛利 ${fmtW(totalProfit)} / ${tgt.total}萬　(${achPct}%)`, projClass));
+    const gapClass  = gap<=0 ? 'c-green' : gap<tgtAmt*0.15 ? 'c-gold' : 'c-red';
+    set('fcst-gap',   gap<=0 ? fc('已達標！','c-green') : fc(fmtW(gap), gapClass));
+    const needClass = need<=dailyTgt ? 'c-green' : need<=dailyTgt*1.3 ? 'c-gold' : 'c-red';
+    set('fcst-need',  remain>0 ? fc(fmtW(need)+'/天', needClass) : fc(gap<=0?'已達標':'月末已過','c-gold'));
+  }
+
+  const daysCount = isCurrentMonth ? daysPassed : daysInMonth;
+  const dLabels=[], dRevenues=[], dProfits=[];
+  for (let d=1; d<=daysCount; d++) {
+    const ds = `${ym}-${String(d).padStart(2,'00')}`;
+    dLabels.push(d+'日');
+    dRevenues.push(+(sRecs.filter(r=>r.date===ds).reduce((s,r)=>s+(r.amount||0),0)/10000).toFixed(1));
+    dProfits.push(profitMap[ds] ? +(profitMap[ds].amount/10000).toFixed(1) : null);
+  }
+  buildChart('ch-daily', charts, 'daily', {
+    type:'line',
+    data:{ labels:dLabels, datasets:[
+      { label:'營業額（萬）', data:dRevenues, borderColor:'#0891b2', backgroundColor:'rgba(8,145,178,.08)', fill:true, tension:.35, pointBackgroundColor:'#0891b2', pointRadius:3 },
+      { label:'毛利（萬）', data:dProfits, borderColor:'#d97706', backgroundColor:'rgba(217,119,6,.06)', fill:true, tension:.35, pointBackgroundColor:'#d97706', pointRadius:4, spanGaps:false }
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},
+      scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'萬'}}}}
+  });
+
+  const allRecs = [...sRecs, ...aRecs].sort((a,b) =>
+    b.date.localeCompare(a.date) || String(b.id).localeCompare(String(a.id))
+  ).slice(0, 8);
+  set('rec-count-lbl', `最近 ${allRecs.length} 筆`);
+  const rl = document.getElementById('recent-list');
+  rl.innerHTML = allRecs.length ? allRecs.map(r => {
+    const isSales = r.type === 'sales';
+    return `<div class="rec-item">
+      <div class="rec-left">
+        <div class="rec-name">${r.staff} <span class="badge ${isSales?'b-gold':'b-blue'}" style="font-size:10px">${isSales?'業務':'鑑定'}</span>${r.isLive?'<span class="badge b-gray" style="font-size:10px;margin-left:4px">直播</span>':''}</div>
+        <div class="rec-meta">${isSales?`接待${r.groups||0}組 · 試背${r.tryon||0}組`:`鑑定${r.totalCount||0}件 · 收購${r.bought||0}件`}</div>
+      </div>
+      <div class="rec-right">
+        <div class="rec-amount">${isSales?(r.amount?fmtW(r.amount):'無成交'):(r.buyAmt?fmtW(r.buyAmt):'—')}</div>
+        <div class="rec-date">${r.date}</div>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty"><div class="empty-icon">📭</div><div class="empty-txt">本月尚無紀錄</div></div>';
+
+  renderCalendar(sRecs, aRecs, ym, isCurrentMonth, daysPassed, daysInMonth);
+}
+
+// ═══════════════════════════════════════════
+// CALENDAR
+// ═══════════════════════════════════════════
+let calRangeStart = null;
+let calRangeEnd   = null;
+let calPickStep   = 0;
+
+function togglePriceGap(fgId, val) {
+  const el = document.getElementById(fgId);
+  if (el) el.style.display = val === '價格未達共識' ? '' : 'none';
+}
+
+function renderCalendar(sRecs, aRecs, ym, isCurrentMonth, daysPassed, daysInMonth) {
+  const [yr, mo] = ym.split('-').map(Number);
+  const firstDow = new Date(yr, mo-1, 1).getDay();
+  const todayStr = new Date().toISOString().slice(0,10);
+
+  const dayMap = {};
+  for (let d=1; d<=daysInMonth; d++) {
+    const ds = `${ym}-${String(d).padStart(2,'0')}`;
+    const sr = sRecs.filter(r=>r.date===ds);
+    const ar = aRecs.filter(r=>r.date===ds);
+    dayMap[ds] = {
+      sales: sr.reduce((s,r)=>s+(r.amount||0),0),
+      hasSales: sr.length>0, hasAppr: ar.length>0,
+      salesRecs: sr, apprRecs: ar
+    };
+  }
+  window._calDayMap = dayMap;
+  window._calYm     = ym;
+  window._calSRecs  = sRecs;
+  window._calARecs  = aRecs;
+  window._calPMap   = pageCache.profit || {};
+
+  _drawCalGrid(yr, mo, daysInMonth, firstDow, daysPassed, isCurrentMonth, todayStr, dayMap);
+}
+
+function _drawCalGrid(yr, mo, daysInMonth, firstDow, daysPassed, isCurrentMonth, todayStr, dayMap) {
+  const DOW = ['日','一','二','三','四','五','六'];
+  const dowCls = ['sun','','','','','','sat'];
+  let html = DOW.map((d,i)=>`<div class="cal-dow ${dowCls[i]}">${d}</div>`).join('');
+  for (let i=0; i<firstDow; i++) html += `<div class="cal-cell empty"></div>`;
+
+  for (let d=1; d<=daysInMonth; d++) {
+    const ds  = `${String(yr)}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow = new Date(yr, mo-1, d).getDay();
+    const dc  = dayMap[ds] || {};
+    const isFuture = isCurrentMonth && d > daysPassed;
+    const isStart  = ds === calRangeStart;
+    const isEnd    = ds === calRangeEnd;
+    const inRange  = calRangeStart && calRangeEnd && ds > calRangeStart && ds < calRangeEnd;
+    const isToday  = ds === todayStr;
+    const dowCl    = dow===0?'sun':dow===6?'sat':'';
+    let cls = `cal-cell ${dowCl}`;
+    if (isStart) cls += ' range-start';
+    else if (isEnd) cls += ' range-end';
+    else if (inRange) cls += ' in-range';
+    else if (isToday) cls += ' today';
+
+    let inner = `<div class="cal-d">${d}</div>`;
+    if (!isFuture && (dc.hasSales || dc.hasAppr)) {
+      if (dc.sales > 0) inner += `<div class="cal-amt">${fmtW(dc.sales)}</div>`;
+      inner += `<div class="cal-dot-row">`;
+      if (dc.hasSales) inner += `<div class="cal-dot" style="background:var(--gold2)"></div>`;
+      if (dc.hasAppr)  inner += `<div class="cal-dot" style="background:var(--green)"></div>`;
+      inner += `</div>`;
+    }
+    html += `<div class="${cls}" data-ds="${ds}" onclick="calCellClick('${ds}')">${inner}</div>`;
+  }
+
+  document.getElementById('cal-grid').innerHTML = html;
+  _updateRangeLbl();
+}
+
+function calCellClick(ds) {
+  const dm = window._calDayMap;
+  if (!dm) return;
+  if (calPickStep === 0 || (calPickStep === 1 && ds < calRangeStart)) {
+    calRangeStart = ds;
+    calRangeEnd   = null;
+    calPickStep   = 1;
+  } else {
+    calRangeEnd = ds;
+    calPickStep = 0;
+  }
+
+  const ym = window._calYm;
+  const [yr, mo] = ym.split('-').map(Number);
+  const daysInMonth = new Date(yr, mo, 0).getDate();
+  const firstDow = new Date(yr, mo-1, 1).getDay();
+  const today = new Date();
+  const isCurrentMonth = (today.getFullYear()===yr && today.getMonth()+1===mo);
+  const daysPassed = isCurrentMonth ? today.getDate() : daysInMonth;
+  _drawCalGrid(yr, mo, daysInMonth, firstDow, daysPassed, isCurrentMonth, today.toISOString().slice(0,10), dm);
+
+  if (calRangeEnd) showRangeDetail();
+}
+
+function _updateRangeLbl() {
+  const fmt = ds => {
+    if (!ds) return '—';
+    const m = parseInt(ds.slice(5,7)), d = parseInt(ds.slice(8,10));
+    return `${m}/${d}`;
+  };
+  set('cal-start-lbl', fmt(calRangeStart));
+  set('cal-end-lbl',   fmt(calRangeEnd));
+  const btn = document.getElementById('cal-clear-btn');
+  if (btn) btn.style.display = calRangeStart ? '' : 'none';
+}
+
+function clearCalRange() {
+  calRangeStart = null;
+  calRangeEnd   = null;
+  calPickStep   = 0;
+  const ym = window._calYm;
+  if (!ym) return;
+  const [yr, mo] = ym.split('-').map(Number);
+  const daysInMonth = new Date(yr, mo, 0).getDate();
+  const firstDow = new Date(yr, mo-1, 1).getDay();
+  const today = new Date();
+  const isCurrentMonth = (today.getFullYear()===yr && today.getMonth()+1===mo);
+  const daysPassed = isCurrentMonth ? today.getDate() : daysInMonth;
+  _drawCalGrid(yr, mo, daysInMonth, firstDow, daysPassed, isCurrentMonth, today.toISOString().slice(0,10), window._calDayMap||{});
+  document.getElementById('cal-detail').style.display='none';
+}
+
+function showRangeDetail() {
+  const start = calRangeStart, end = calRangeEnd;
+  if (!start || !end) return;
+  const sRecs = (window._calSRecs||[]).filter(r=>r.date>=start&&r.date<=end);
+  const aRecs = (window._calARecs||[]).filter(r=>r.date>=start&&r.date<=end);
+
+  const isSingleDay = start === end;
+  const sm = parseInt(start.slice(5,7)), sd = parseInt(start.slice(8,10));
+  const em = parseInt(end.slice(5,7)),   ed = parseInt(end.slice(8,10));
+  const dateLabel = isSingleDay ? `${sm}月${sd}日` : `${sm}月${sd}日 ～ ${em}月${ed}日`;
+  set('cal-detail-date', dateLabel);
+
+  const bfBtn = document.getElementById('cal-backfill-btn');
+  if (bfBtn) {
+    bfBtn.style.display = isSingleDay ? '' : 'none';
+    window._bfDate = isSingleDay ? start : null;
+  }
+
+  let html = '';
+
+  const totalSale  = sRecs.reduce((s,r)=>s+(r.amount||0),0);
+  const totalGrp   = sRecs.reduce((s,r)=>s+(r.groups||0),0);
+  const totalSold  = sRecs.reduce((s,r)=>s+(r.soldCnt||0),0);
+  const totalAppr  = aRecs.reduce((s,r)=>s+(r.totalCount||0),0);
+  const totalBought= aRecs.reduce((s,r)=>s+(r.bought||0),0);
+
+  if (!isSingleDay) {
+    html += `<div class="cal-range-kpi">
+      <div class="cal-rkpi"><div class="cal-rkpi-lbl">業績合計</div><div class="cal-rkpi-val">${fmtW(totalSale)}</div></div>
+      <div class="cal-rkpi"><div class="cal-rkpi-lbl">接待 / 成交</div><div class="cal-rkpi-val">${totalGrp} / ${totalSold}組</div></div>
+      <div class="cal-rkpi"><div class="cal-rkpi-lbl">鑑定 / 收購</div><div class="cal-rkpi-val">${totalAppr} / ${totalBought}件</div></div>
+    </div>`;
+  }
+
+  const allDates = [...new Set([...sRecs.map(r=>r.date),...aRecs.map(r=>r.date)])].sort();
+  if (allDates.length === 0) {
+    html += `<div class="cal-no-data">📭 此區間無填報紀錄</div>`;
+  } else {
+    allDates.forEach(ds => {
+      const sr = sRecs.filter(r=>r.date===ds);
+      const ar = aRecs.filter(r=>r.date===ds);
+      const dm = parseInt(ds.slice(5,7)), dd = parseInt(ds.slice(8,10));
+      const dow = ['日','一','二','三','四','五','六'][new Date(ds).getDay()];
+      if (!isSingleDay) html += `<div style="font-size:12px;font-weight:700;color:var(--text2);margin:10px 0 5px;padding-bottom:4px;border-bottom:1px solid var(--border)">${dm}月${dd}日（週${dow}）</div>`;
+
+      if (sr.length) {
+        html += `<div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:4px">💼 業務</div>`;
+        html += `<div class="cal-staff-row" style="background:var(--surface2);border-radius:6px;margin-bottom:2px"><span class="cal-staff-name">人員</span><span class="cal-staff-val"><b>接待</b></span><span class="cal-staff-val"><b>成交</b></span><span class="cal-staff-val"><b>業績</b></span></div>`;
+        sr.forEach(r => {
+          const convRate = r.groups>0?(r.soldCnt/r.groups*100).toFixed(0)+'%':'—';
+          const isBf = r.staff === '門市整體';
+          html += `<div class="cal-staff-row" style="align-items:center">
+            <span class="cal-staff-name" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+              ${r.staff}${isBf?`<span style="font-size:10px;color:var(--text3)">補填</span>`:''}
+              ${r.isLive?'<span style="font-size:10px;color:#7c3aed">直播</span>':''}
+              <button class="del-rec-btn" data-rid="${r.id}" data-rtype="sales" style="font-size:10px;color:var(--red);background:var(--red-bg);border:1px solid var(--red-bdr);border-radius:4px;cursor:pointer;padding:1px 5px;line-height:1.4;margin-left:2px">✕刪</button>
+            </span>
+            <span class="cal-staff-val"><b>${r.groups||0}</b>組</span>
+            <span class="cal-staff-val"><b>${r.soldCnt||0}</b>組 (${convRate})</span>
+            <span class="cal-staff-val" style="color:var(--gold);font-weight:700">${r.amount?fmtW(r.amount):'無成交'}</span>
+          </div>`;
+          if (r.noReason) html += `<div style="font-size:11px;color:var(--text3);padding:0 0 3px 4px">📌 ${esc(r.noReason)}</div>`;
+        });
+        const dayTotal = sr.reduce((s,r)=>s+(r.amount||0),0);
+        html += `<div style="text-align:right;font-size:12px;font-weight:700;color:var(--gold);padding:4px 4px 8px">小計：${fmtW(dayTotal)}</div>`;
+      }
+      if (ar.length) {
+        html += `<div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:4px">🔍 鑑定</div>`;
+        html += `<div class="cal-staff-row" style="background:var(--surface2);border-radius:6px;margin-bottom:2px"><span class="cal-staff-name">人員</span><span class="cal-staff-val"><b>鑑定</b></span><span class="cal-staff-val"><b>收購</b></span><span class="cal-staff-val"><b>金額</b></span></div>`;
+        ar.forEach(r => {
+          const rate = r.totalCount>0?(r.bought/r.totalCount*100).toFixed(0)+'%':'—';
+          const isBf = r.staff === '門市整體';
+          html += `<div class="cal-staff-row">
+            <span class="cal-staff-name" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+              ${r.staff}${isBf?`<span style="font-size:10px;color:var(--text3)">補填</span>`:''}
+              <button class="del-rec-btn" data-rid="${r.id}" data-rtype="appraisal" style="font-size:10px;color:var(--red);background:var(--red-bg);border:1px solid var(--red-bdr);border-radius:4px;cursor:pointer;padding:1px 5px;line-height:1.4;margin-left:2px">✕刪</button>
+            </span>
+            <span class="cal-staff-val"><b>${r.totalCount||0}</b>件</span>
+            <span class="cal-staff-val"><b>${r.bought||0}</b>件(${rate})${r.consign?` 寄賣${r.consign}`:''}</span>
+            <span class="cal-staff-val" style="color:var(--green);font-weight:700">${r.buyAmt?fmtW(r.buyAmt):'—'}</span>
+          </div>`;
+          if (r.noReason) html += `<div style="font-size:11px;color:var(--text3);padding:0 0 3px 4px">📌 ${esc(r.noReason)}</div>`;
+        });
+      }
+    });
+  }
+
+  document.getElementById('cal-detail-body').innerHTML = html;
+  document.getElementById('cal-detail').style.display='';
+  document.getElementById('cal-detail').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ═══════════════════════════════════════════
+// SALES TAB
+// ═══════════════════════════════════════════
+function renderSalesTab(sRecs, tgt, profitMap) {
+  profitMap = profitMap || {};
+  set('sales-month-lbl', activeMonth.replace('-','年')+'月');
+
+  const staffProfitTotal = {};
+  Object.values(profitMap).forEach(v => {
+    if (v.staffProfit) {
+      Object.entries(v.staffProfit).forEach(([name, amt]) => {
+        staffProfitTotal[name] = (staffProfitTotal[name]||0) + (amt||0);
+      });
+    }
+  });
+
+  const staffData = {};
+  STAFF.forEach(s => {
+    staffData[s] = { amount:0, liveAmt:0, groups:0, tryon:0, soldCnt:0, newLine:0, lineVisit:0 };
+  });
+  sRecs.forEach(r => {
+    if (!staffData[r.staff]) staffData[r.staff] = { amount:0, liveAmt:0, groups:0, tryon:0, soldCnt:0, newLine:0, lineVisit:0 };
+    const sd = staffData[r.staff];
+    sd.amount    += (r.amount||0);
+    sd.liveAmt   += r.isLive ? (r.liveAmt||0) : 0;
+    sd.groups    += (r.groups||0);
+    sd.tryon     += (r.tryon||0);
+    sd.soldCnt   += (r.soldCnt||0);
+    sd.newLine   += (r.newLine||0);
+    sd.lineVisit += (r.lineVisit||0);
+  });
+
+  const sorted = [...SALES_PERF_STAFF]
+    .map(name => [name, staffData[name] || { amount:0, liveAmt:0, groups:0, tryon:0, soldCnt:0, newLine:0, lineVisit:0 }])
+    .sort((a,b) => {
+      const pa = staffProfitTotal[a[0]]||0;
+      const pb = staffProfitTotal[b[0]]||0;
+      if (pa !== pb) return pb - pa;
+      return b[1].amount - a[1].amount;
+    });
+  const ranks = ['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣'];
+
+  const grid = document.getElementById('staff-perf-grid');
+  grid.innerHTML = sorted.map(([name, sd], i) => {
+    const stf      = tgt?.staff?.[name] || {};
+    const totalTgt = typeof stf === 'object' ? (stf.total||0) : (stf||0);
+    const myProfit = staffProfitTotal[name] || 0;
+    const target   = totalTgt * 10000;
+    const pct      = target > 0 ? Math.min(100, myProfit/target*100) : 0;
+    const pctColor = pct>=80?'var(--green)':pct>=50?'var(--gold2)':'var(--red)';
+    const convRate = sd.groups > 0 ? (sd.soldCnt/sd.groups*100).toFixed(0) : '0';
+    const tryRate  = sd.groups > 0 ? (sd.tryon/sd.groups*100).toFixed(0) : '0';
+    return `<div class="scard">
+      <div class="scard-head">
+        <div class="scard-name">${ranks[i]} ${name}</div>
+        ${target>0?`<div class="scard-pct" style="background:${pct>=80?'var(--green-bg)':pct>=50?'var(--gold-bg)':'var(--red-bg)'};color:${pctColor}">${pct.toFixed(0)}%</div>`:''}
+      </div>
+      ${target>0?`<div class="bar-wrap">
+        <div class="bar-lbl"><span>毛利進度</span><span>${fmtW(myProfit)} / ${totalTgt}萬</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${pctColor}"></div></div>
+      </div>`:''}
+      <div class="scard-row"><span class="scard-key">個人毛利</span><span class="scard-v" style="color:var(--gold)">${myProfit?fmtW(myProfit):'未入帳'}</span></div>
+      <div class="scard-row"><span class="scard-key">本月營業額</span><span class="scard-v">${fmtW(sd.amount)||'0'}</span></div>
+      <div class="scard-row"><span class="scard-key">接待組數</span><span class="scard-v">${sd.groups} 組</span></div>
+      <div class="scard-row"><span class="scard-key">試背率</span><span class="scard-v">${tryRate}%</span></div>
+      <div class="scard-row"><span class="scard-key">成交率</span><span class="scard-v">${convRate}%</span></div>
+      <div class="scard-row"><span class="scard-key">Line 開發</span><span class="scard-v">${sd.newLine} 人 / 到店 ${sd.lineVisit}</span></div>
+      ${sd.liveAmt>0?`<div class="scard-row"><span class="scard-key">直播業績</span><span class="scard-v" style="color:#7c3aed">${fmtW(sd.liveAmt)}</span></div>`:''}
+    </div>`;
+  }).join('');
+
+  buildChart('ch-staff-bar', charts, 'staffBar', {
+    type:'bar',
+    data:{
+      labels: sorted.map(([n])=>n),
+      datasets:[
+        { label:'個人毛利（萬）', data:sorted.map(([n])=>+((staffProfitTotal[n]||0)/10000).toFixed(1)), backgroundColor:'rgba(217,119,6,.75)', borderColor:'#d97706', borderWidth:1.5, borderRadius:5 },
+        { label:'營業額（萬）', data:sorted.map(([,sd])=>+(sd.amount/10000).toFixed(1)), backgroundColor:'rgba(8,145,178,.3)', borderColor:'#0891b2', borderWidth:1, borderRadius:5 },
+        ...(tgt ? [{ label:'毛利目標（萬）', data:sorted.map(([n])=>{const s=tgt.staff?.[n];return typeof s==='object'?(s.total||0):(s||0);}), type:'line', borderColor:'#dc2626', backgroundColor:'transparent', borderWidth:2, borderDash:[4,3], pointRadius:4, pointBackgroundColor:'#dc2626' }] : [])
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:12,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'萬'}}}}
+  });
+
+  const ym = activeMonth;
+  const [yr, mo] = ym.split('-').map(Number);
+  const today = new Date();
+  const isCurrentMonth = (today.getFullYear()===yr && today.getMonth()+1===mo);
+  const daysInMonth = new Date(yr, mo, 0).getDate();
+  const daysCount   = isCurrentMonth ? today.getDate() : daysInMonth;
+  const dL=[], dG=[], dT=[];
+  for (let d=1; d<=daysCount; d++) {
+    const ds = `${ym}-${String(d).padStart(2,'0')}`;
+    const dr = sRecs.filter(r=>r.date===ds);
+    dL.push(d+'日');
+    dG.push(dr.reduce((s,r)=>s+(r.groups||0),0));
+    dT.push(dr.reduce((s,r)=>s+(r.tryon||0),0));
+  }
+  buildChart('ch-reception', charts, 'reception', {
+    type:'line',
+    data:{labels:dL,datasets:[
+      {label:'接待組數',data:dG,borderColor:'#0891b2',backgroundColor:'rgba(8,145,178,.08)',fill:true,tension:.35,pointRadius:2},
+      {label:'試背組數',data:dT,borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.05)',fill:true,tension:.35,pointRadius:2}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+  });
+
+  const totalNewLine = sRecs.reduce((s,r)=>s+(r.newLine||0),0);
+  const totalVisit   = sRecs.reduce((s,r)=>s+(r.lineVisit||0),0);
+  const visitRate    = totalNewLine > 0 ? (totalVisit/totalNewLine*100).toFixed(0) : 0;
+  document.getElementById('line-stats').innerHTML = `
+    <div class="kpi"><div class="kpi-lbl">本月新加 Line</div><div class="kpi-val">${totalNewLine} 人</div><div class="kpi-sub">累計開發客群</div></div>
+    <div class="kpi"><div class="kpi-lbl">Line 邀約到店</div><div class="kpi-val">${totalVisit} 人</div><div class="kpi-sub">邀約到店率 ${visitRate}%</div></div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// APPRAISAL TAB
+// ═══════════════════════════════════════════
+function renderApprTab(aRecs, tgt) {
+  const totalCnt  = aRecs.reduce((s,r)=>s+(r.totalCount||0),0);
+  const boughtCnt = aRecs.reduce((s,r)=>s+(r.bought||0),0);
+  const buyAmt    = aRecs.reduce((s,r)=>s+(r.buyAmt||0),0);
+  const listedCnt = aRecs.filter(r=>r.listing==='已上架').reduce((s,r)=>s+(r.bought||0),0);
+  const rate      = totalCnt > 0 ? (boughtCnt/totalCnt*100).toFixed(1) : '—';
+  const listedRate= boughtCnt > 0 ? (listedCnt/boughtCnt*100).toFixed(0) : '—';
+
+  set('ap-total',     totalCnt+'件');
+  set('ap-total-sub', tgt ? `目標 ${tgt.appr} 件` : '尚未設定目標');
+  if (tgt) setBar('ap-total-bar', totalCnt, tgt.appr);
+  set('ap-bought',    boughtCnt+'件');
+  set('ap-rate',      `收購率 ${rate}%`);
+  set('ap-amt',       fmtW(buyAmt));
+  set('ap-listed',    listedRate+'%');
+
+  const ym = activeMonth;
+  const [yr, mo] = ym.split('-').map(Number);
+  const today = new Date();
+  const isCurrentMonth = (today.getFullYear()===yr && today.getMonth()+1===mo);
+  const daysInMonth = new Date(yr, mo, 0).getDate();
+  const daysCount   = isCurrentMonth ? today.getDate() : daysInMonth;
+  const dL=[], dTotal=[], dBought=[];
+  for (let d=1; d<=daysCount; d++) {
+    const ds=`${ym}-${String(d).padStart(2,'0')}`;
+    const dr=aRecs.filter(r=>r.date===ds);
+    dL.push(d+'日');
+    dTotal.push(dr.reduce((s,r)=>s+(r.totalCount||0),0));
+    dBought.push(dr.reduce((s,r)=>s+(r.bought||0),0));
+  }
+  buildChart('ch-appr-trend', charts, 'apprTrend', {
+    type:'line',
+    data:{labels:dL,datasets:[
+      {label:'鑑定件數',data:dTotal,borderColor:'#059669',backgroundColor:'rgba(5,150,105,.08)',fill:true,tension:.35,pointRadius:2},
+      {label:'收購件數',data:dBought,borderColor:'#0891b2',backgroundColor:'rgba(8,145,178,.06)',fill:true,tension:.35,pointRadius:2}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+  });
+
+  const staffMap = {};
+  aRecs.forEach(r => {
+    if (!staffMap[r.staff]) staffMap[r.staff]={total:0,bought:0,amt:0,timeSum:0,timeCnt:0,listed:0};
+    const s=staffMap[r.staff];
+    s.total+=(r.totalCount||0);s.bought+=(r.bought||0);s.amt+=(r.buyAmt||0);
+    if(r.avgTime){s.timeSum+=r.avgTime;s.timeCnt++;}
+    if(r.listing==='已上架')s.listed+=(r.bought||0);
+  });
+  const tbody=document.getElementById('appr-staff-tbl');
+  tbody.innerHTML=Object.entries(staffMap).sort((a,b)=>b[1].total-a[1].total).map(([name,sd])=>{
+    const r=sd.total>0?(sd.bought/sd.total*100).toFixed(0)+'%':'—';
+    const avg=sd.timeCnt>0?Math.round(sd.timeSum/sd.timeCnt)+'分':'—';
+    return `<tr><td><b>${name}</b></td><td>${sd.total}件</td><td>${sd.bought}件</td><td>${r}</td><td>${fmtW(sd.amt)}</td><td>${avg}</td><td>${sd.listed>0?`<span class="badge b-green">已上架${sd.listed}</span>`:'<span class="badge b-gray">待處理</span>'}</td></tr>`;
+  }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:24px">本月尚無鑑定紀錄</td></tr>';
+
+  const reasonMap={};
+  aRecs.filter(r=>r.noReason).forEach(r=>{reasonMap[r.noReason]=(reasonMap[r.noReason]||0)+1;});
+  buildChart('ch-appr-reason', charts, 'apprReason', {
+    type:'doughnut',
+    data:{labels:Object.keys(reasonMap),datasets:[{data:Object.values(reasonMap),backgroundColor:['#dc2626','#d97706','#0891b2','#7c3aed','#9ca3af'],borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}}}}
+  });
+}
+
+// ═══════════════════════════════════════════
+// TARGETS TAB
+// ═══════════════════════════════════════════
+function renderTargetsTab(tgt, liveDone, sRecs, profitMap) {
+  profitMap = profitMap || {};
+  const ym = activeMonth;
+  liveDone = liveDone || 0;
+  sRecs    = sRecs    || [];
+
+  const staffProfitTotal = {};
+  Object.values(profitMap).forEach(v => {
+    if (v.staffProfit) {
+      Object.entries(v.staffProfit).forEach(([name, amt]) => {
+        staffProfitTotal[name] = (staffProfitTotal[name]||0) + (amt||0);
+      });
+    }
+  });
+  set('tgt-month-lbl', ym.replace('-','年')+'月');
+
+  if (tgt) {
+    set('tv-total',    tgt.total    || '—');
+    set('tv-store',    tgt.store    || '—');
+    set('tv-live',     tgt.live     || '—');
+    set('tv-sessions', tgt.sessions || '—');
+    set('tv-appr',     tgt.appr     || '—');
+  } else {
+    ['tv-total','tv-store','tv-live','tv-sessions','tv-appr'].forEach(id=>set(id,'—'));
+  }
+
+  const sessions = tgt?.sessions || 8;
+  set('live-done-lbl', `已完成 ${liveDone} / ${sessions} 場`);
+  const dotsEl = document.getElementById('live-dots');
+  dotsEl.innerHTML = '';
+  for (let i=1; i<=sessions; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'live-dot' + (i<=liveDone ? ' done' : '');
+    dot.textContent = i;
+    const newVal = i<=liveDone ? i-1 : i;
+    dot.onclick = () => {
+      if (!isManager) { alert('請先進入店長模式才能更新直播場次'); return; }
+      DB.setLiveDone(ym, newVal, renderAll);
+    };
+    dotsEl.appendChild(dot);
+  }
+
+  const liveRecs = tgt?.liveRecs || [];
+  const liveViewEl = document.getElementById('live-records-view');
+  if (liveRecs.length) {
+    liveViewEl.innerHTML = liveRecs.map((r, idx) => {
+      const crewHtml = [
+        r.host    ? `<span class="crew-chip crew-host">🎙 主播：${r.host}</span>` : '',
+        r.cohost1 ? `<span class="crew-chip crew-cohost">副播：${r.cohost1}</span>` : '',
+        r.cohost2 ? `<span class="crew-chip crew-cohost">副播：${r.cohost2}</span>` : '',
+        r.helper  ? `<span class="crew-chip crew-helper">小幫手：${r.helper}</span>` : ''
+      ].filter(Boolean).join('');
+      return `<div class="live-rec-card">
+        <div class="live-rec-hd">
+          <span class="live-rec-no">🎥 第 ${idx+1} 場${r.date?' · '+r.date.slice(5).replace('-','/'):''}${r.done?'<span class="badge b-green" style="font-size:10px;margin-left:6px">已完成</span>':'<span class="badge b-gray" style="font-size:10px;margin-left:6px">未開播</span>'}</span>
+        </div>
+        <div class="live-rec-kpi">
+          <div class="live-rec-kv"><div class="live-rec-kv-lbl">營業額</div><div class="live-rec-kv-val" style="color:var(--blue)">${r.revenue?fmtW(r.revenue):'—'}</div></div>
+          <div class="live-rec-kv"><div class="live-rec-kv-lbl">毛利</div><div class="live-rec-kv-val" style="color:var(--gold)">${r.profit?fmtW(r.profit):'—'}</div></div>
+          <div class="live-rec-kv"><div class="live-rec-kv-lbl">成交筆數</div><div class="live-rec-kv-val">${r.soldCnt||'—'}</div></div>
+        </div>
+        ${crewHtml?`<div class="live-rec-crew">${crewHtml}</div>`:''}
+      </div>`;
+    }).join('');
+  } else {
+    liveViewEl.innerHTML = `<div style="font-size:12px;color:var(--text3);text-align:center;padding:12px;background:var(--surface2);border-radius:var(--r)">尚無直播場次紀錄</div>`;
+  }
+
+  const svEl = document.getElementById('staff-tgt-view');
+  const staffRows = STAFF.map(name => {
+    const stf = tgt?.staff?.[name] || {};
+    const storeTgt = typeof stf === 'object' ? (stf.store||0) : stf;
+    const liveTgt  = typeof stf === 'object' ? (stf.live||0)  : 0;
+    const totalTgt = typeof stf === 'object' ? (stf.total||storeTgt+liveTgt) : stf;
+    const myProfit = staffProfitTotal[name] || 0;
+    const pct = totalTgt > 0 ? Math.min(100, myProfit/(totalTgt*10000)*100).toFixed(0) : 0;
+    const pctColor = pct>=80?'var(--green)':pct>=50?'var(--gold)':'var(--red)';
+    const revenueAmt = sRecs.filter(r=>r.staff===name).reduce((s,r)=>s+(r.amount||0),0);
+    return `<div class="stgt-row-5">
+      <span style="font-weight:600">${name}</span>
+      <span style="color:var(--text3);font-size:12px">${storeTgt?storeTgt+'萬':'—'}</span>
+      <span style="color:var(--blue);font-size:12px">${liveTgt?liveTgt+'萬':'—'}</span>
+      <span style="color:var(--gold);font-weight:600">${totalTgt?totalTgt+'萬':'—'}</span>
+      <span style="font-size:12px">
+        <span style="color:var(--gold);font-weight:600">${myProfit?fmtW(myProfit):'—'}</span>
+        ${totalTgt>0&&myProfit?`<span style="font-size:10px;margin-left:3px;color:${pctColor}">${pct}%</span>`:''}
+        ${revenueAmt?`<span style="font-size:10px;color:var(--text3);display:block">營業額 ${fmtW(revenueAmt)}</span>`:''}
+      </span>
+    </div>`;
+  }).join('');
+  svEl.innerHTML = `<div class="stgt-row-5 hd" style="background:var(--surface2);border-radius:var(--r) var(--r) 0 0"><span>業務</span><span>門市目標</span><span>直播目標</span><span>總目標</span><span>毛利達成</span></div>${staffRows}`;
+
+  if (isManager && tgt) {
+    document.getElementById('ti-total').value    = tgt.total    || '';
+    document.getElementById('ti-store').value    = tgt.store    || '';
+    document.getElementById('ti-live').value     = tgt.live     || '';
+    document.getElementById('ti-sessions').value = tgt.sessions || '';
+    document.getElementById('ti-appr').value     = tgt.appr     || '';
+    document.getElementById('tgt-month-input').value = ym;
+    renderLiveRecInputs(liveRecs, sessions);
+  }
+
+  const inputsEl = document.getElementById('staff-tgt-inputs');
+  if (inputsEl) {
+    inputsEl.innerHTML = STAFF.map(name => {
+      const stf = tgt?.staff?.[name] || {};
+      const storeTgt = typeof stf === 'object' ? (stf.store||'') : stf||'';
+      const liveTgt  = typeof stf === 'object' ? (stf.live||'')  : '';
+      const totalTgt = typeof stf === 'object' ? (stf.total||'') : stf||'';
+      const achieved = staffProfitTotal[name] || 0;
+      const achievedRevenue = sRecs.filter(r=>r.staff===name).reduce((s,r)=>s+(r.amount||0),0);
+      return `<div class="stgt-row-5">
+        <span style="font-weight:600">${name}</span>
+        <input type="number" id="stgt-str-${name}" value="${storeTgt}" placeholder="門市">
+        <input type="number" id="stgt-liv-${name}" value="${liveTgt}"  placeholder="直播" oninput="calcStaffTotal('${name}')">
+        <input type="number" id="stgt-tot-${name}" value="${totalTgt}" placeholder="總計">
+        <span style="font-size:12px">
+          <span style="color:var(--gold);font-weight:600">${achieved?fmtW(achieved):'—'}</span>
+          ${achievedRevenue?`<span style="font-size:10px;color:var(--text3);display:block">營業額 ${fmtW(achievedRevenue)}</span>`:''}
+        </span>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ═══════════════════════════════════════════
+// RECORDS TAB
+// ═══════════════════════════════════════════
+function renderRecordsTab(sRecs, aRecs) {
+  const typeFilter  = document.getElementById('rec-type-filter').value;
+  const staffFilter = document.getElementById('rec-staff-filter').value;
+  let recs = [...(sRecs||[]), ...(aRecs||[])];
+  if (typeFilter !== 'all') recs = recs.filter(r=>r.type===(typeFilter==='sales'?'sales':'appraisal'));
+  if (staffFilter !== 'all') recs = recs.filter(r=>r.staff===staffFilter);
+  recs = recs.sort((a,b) => b.date.localeCompare(a.date)||String(b.id).localeCompare(String(a.id)));
+
+  set('rec-count', `共 ${recs.length} 筆`);
+  const mgrNoteCol = document.getElementById('mgr-note-th');
+  if (mgrNoteCol) mgrNoteCol.style.display = isManager ? '' : 'none';
+
+  const tbody = document.getElementById('records-tbody');
+  tbody.innerHTML = recs.length ? recs.map(r => {
+    const isSales = r.type === 'sales';
+    return `<tr>
+      <td><span class="badge ${isSales?'b-gold':'b-blue'}">${isSales?'業務':'鑑定'}</span>${r.isLive?' <span class="badge b-gray">直播</span>':''}</td>
+      <td>${r.date}</td>
+      <td style="font-weight:600">${r.staff}</td>
+      <td>${isSales?`接待${r.groups||0}組 / 試背${r.tryon||0}組`:`鑑定${r.totalCount||0}件`}</td>
+      <td>${isSales?`成交${r.soldCnt||0}組`:`收購${r.bought||0}件`}</td>
+      <td>${isSales?(r.amount?fmtW(r.amount):'—'):(r.buyAmt?fmtW(r.buyAmt):'—')}</td>
+      <td>${r.isLive?'<span class="badge b-gray">直播</span>':'—'}</td>
+      <td>${r.newLine!=null?r.newLine+'人':'—'}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;color:var(--text3)">${r.note?esc(r.note):'—'}</td>
+      ${isManager?`<td><input type="text" value="${esc(r.mgrNote||'')}" placeholder="備註..." style="border:1px solid var(--border2);border-radius:6px;padding:4px 8px;font-size:12px;width:120px" onchange="updateMgrNote('${esc(r.id)}',this.value)"></td>`:''}
+    </tr>`;
+  }).join('') : `<tr><td colspan="10" style="text-align:center;padding:28px;color:var(--text3)">本月尚無紀錄</td></tr>`;
+}
+
+function updateMgrNote(id, val) {
+  const type = [...pageCache.sales,...pageCache.appraisal].find(r=>String(r.id)===String(id))?.type || 'sales';
+  DB.updateMgrNote(id, val, type);
+}
+
+// ═══════════════════════════════════════════
+// FORM SUBMISSIONS
+// ═══════════════════════════════════════════
+function getMultiCheck(wrapId, otherChkId, otherTxtId) {
+  const checked = [...document.querySelectorAll(`#${wrapId} input[type=checkbox]:checked`)].map(cb => cb.value);
+  if (checked.includes('其它')) {
+    const txt = (document.getElementById(otherTxtId)?.value || '').trim();
+    const idx = checked.indexOf('其它');
+    if (txt) checked[idx] = `其它（${txt}）`;
+  }
+  return checked.join('、');
+}
+function clearMultiCheck(wrapId, otherTxtId) {
+  document.querySelectorAll(`#${wrapId} input[type=checkbox]`).forEach(cb => cb.checked = false);
+  const txt = document.getElementById(otherTxtId);
+  if (txt) { txt.value=''; txt.style.display='none'; }
+}
+
+function submitSales() {
+  const name = document.getElementById('sf-name').value;
+  const date = document.getElementById('sf-date').value;
+  if (!name || !date) { showToast('sales-toast-err'); return; }
+  const isLive = document.getElementById('sf-islive').checked;
+  const rec = {
+    id: Date.now()+'-s', type:'sales', date, staff:name,
+    groups:    parseInt(document.getElementById('sf-groups').value)||0,
+    tryon:     parseInt(document.getElementById('sf-tryon').value)||0,
+    soldCnt:   parseInt(document.getElementById('sf-sold-cnt').value)||0,
+    noSoldCnt: parseInt(document.getElementById('sf-nosold-cnt').value)||0,
+    amount:    parseInt(document.getElementById('sf-amount').value)||0,
+    isLive, liveAmt: isLive?(parseInt(document.getElementById('sf-live-amt').value)||0):0,
+    newLine:   parseInt(document.getElementById('sf-newline').value)||0,
+    lineVisit: parseInt(document.getElementById('sf-linevisit').value)||0,
+    noReason:  getMultiCheck('sf-noreason-wrap','sf-other-chk','sf-other-text'),
+    note:      document.getElementById('sf-note').value,
+    mgrNote:   ''
+  };
+  const btn = document.querySelector('#sales-form .submit-btn');
+  btn.disabled=true; btn.textContent='送出中...';
+  DB.saveRecord(rec, () => {
+    btn.disabled=false; btn.textContent='送出業務日報';
+    ['sf-groups','sf-tryon','sf-sold-cnt','sf-nosold-cnt','sf-amount','sf-live-amt','sf-newline','sf-linevisit'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    clearMultiCheck('sf-noreason-wrap','sf-other-text');
+    document.getElementById('sf-note').value='';
+    document.getElementById('sf-islive').checked=false;
+    document.getElementById('live-amount-fg').style.display='none';
+    document.getElementById('demo-notice').style.display='none';
+    showToast('sales-toast-ok');
+    renderAll();
+  });
+}
+
+function submitAppr() {
+  const name = document.getElementById('af-name').value;
+  const date = document.getElementById('af-date').value;
+  if (!name || !date) { showToast('appr-toast-err'); return; }
+  const noReason = document.getElementById('af-noreason').value;
+  const priceGapRaw = noReason === '價格未達共識' ? (document.getElementById('af-price-gap-txt').value||'').trim() : '';
+  const fullReason = noReason === '價格未達共識' && priceGapRaw ? `價格未達共識（落差：${priceGapRaw}）` : noReason;
+  const rec = {
+    id: Date.now()+'-a', type:'appraisal', date, staff:name,
+    totalCount: parseInt(document.getElementById('af-total').value)||0,
+    bought:     parseInt(document.getElementById('af-bought').value)||0,
+    buyAmt:     parseInt(document.getElementById('af-amt').value)||0,
+    consign:    parseInt(document.getElementById('af-consign').value)||0,
+    noReason:   fullReason,
+    avgTime:    parseInt(document.getElementById('af-avgtime').value)||0,
+    listing:    document.getElementById('af-listing').value,
+    note:       document.getElementById('af-note').value,
+    mgrNote:    ''
+  };
+  const btn = document.querySelector('#appr-form .submit-btn');
+  btn.disabled=true; btn.textContent='送出中...';
+  DB.saveRecord(rec, () => {
+    btn.disabled=false; btn.textContent='送出鑑定日報';
+    ['af-total','af-bought','af-amt','af-avgtime','af-consign','af-price-gap-txt'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    document.getElementById('af-noreason').value='';
+    document.getElementById('af-listing').value='';
+    document.getElementById('af-note').value='';
+    document.getElementById('af-price-gap').style.display='none';
+    document.getElementById('demo-notice').style.display='none';
+    showToast('appr-toast-ok');
+    renderAll();
+  });
+}
+
+function submitProfit() {
+  const date   = document.getElementById('pf-date').value;
+  const amount = parseInt(document.getElementById('pf-profit').value) || 0;
+  const note   = document.getElementById('pf-note').value;
+  if (!date || amount <= 0) { showToast('profit-toast-err'); return; }
+  const btn = document.querySelector('#profit-form .submit-btn');
+  if (btn) { btn.disabled=true; btn.textContent='入帳中...'; }
+  DB.saveProfit(date, amount, note, () => {
+    if (btn) { btn.disabled=false; btn.textContent='確認入帳'; }
+    document.getElementById('pf-profit').value='';
+    document.getElementById('pf-note').value='';
+    showToast('profit-toast-ok');
+    renderAll();
+  });
+}
+
+function renderProfitHistory(profitMap, ym) {
+  const el = document.getElementById('profit-history');
+  if (!el) return;
+  const entries = Object.entries(profitMap).sort((a,b) => b[0].localeCompare(a[0]));
+  if (!entries.length) {
+    el.innerHTML = `<div style="font-size:12px;color:var(--text3);text-align:center;padding:12px">本月尚無毛利入帳紀錄</div>`;
+    return;
+  }
+  const totalProfit = entries.reduce((s,[,v])=>s+(v.amount||0),0);
+  el.innerHTML = `
+    <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;display:flex;justify-content:space-between">
+      <span>本月毛利入帳紀錄</span>
+      <span style="color:var(--gold)">合計 ${fmtW(totalProfit)}</span>
+    </div>` +
+    entries.map(([date, v]) => {
+      const d = parseInt(date.slice(-2));
+      const m = parseInt(date.slice(5,7));
+      return `<div class="profit-hist-row">
+        <div>
+          <div class="profit-hist-date">${m}月${d}日</div>
+          ${v.note?`<div class="profit-hist-note">${esc(v.note)}</div>`:''}
+        </div>
+        <div style="text-align:right">
+          <div class="profit-hist-amt">${fmtW(v.amount)}</div>
+          <button onclick="deleteProfit('${esc(date)}')" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0;margin-top:2px">✕ 刪除</button>
+        </div>
+      </div>`;
+    }).join('');
+}
+
+function deleteProfit(date) {
+  if (!confirm(`確認刪除 ${date} 的毛利入帳？`)) return;
+  DB.saveProfit(date, 0, '__deleted__', () => renderAll());
+}
+
+function liveCrewOptions(selected) {
+  const all = [...STAFF, 'EVAN'];
+  return `<option value="">— 選擇 —</option>` +
+    all.map(n=>`<option value="${n}"${n===selected?' selected':''}>${n}</option>`).join('');
+}
+
+function renderLiveRecInputs(liveRecs, sessions) {
+  const el = document.getElementById('live-rec-inputs');
+  if (!el) return;
+  const count = Math.max(sessions||1, liveRecs.length);
+  el.innerHTML = Array.from({length: count}, (_, idx) => {
+    const r = liveRecs[idx] || {};
+    return `<div class="live-rec-input-card" id="lri-${idx}">
+      <div class="live-rec-input-hd">
+        🎥 第 ${idx+1} 場
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--green);cursor:pointer">
+          <input type="checkbox" id="lri-done-${idx}" ${r.done?'checked':''} style="accent-color:var(--gold2)"> 已完成
+        </label>
+      </div>
+      <div class="fg" style="margin-bottom:10px">
+        <label style="font-size:11px;font-weight:700;color:var(--text3);display:block;margin-bottom:4px">直播日期</label>
+        <input type="date" class="fi" id="lri-date-${idx}" value="${r.date||''}" style="font-size:14px">
+      </div>
+      <div class="live-rec-num-grid">
+        <div><div class="lri-lbl" style="color:var(--blue)">營業額（元）</div><input type="number" class="fi" id="lri-rev-${idx}" value="${r.revenue||''}" placeholder="0" style="font-size:14px"></div>
+        <div><div class="lri-lbl" style="color:var(--gold)">毛利（元）</div><input type="number" class="fi" id="lri-pro-${idx}" value="${r.profit||''}" placeholder="0" style="font-size:14px"></div>
+        <div><div class="lri-lbl">成交筆數</div><input type="number" class="fi" id="lri-sol-${idx}" value="${r.soldCnt||''}" placeholder="0" style="font-size:14px"></div>
+      </div>
+      <div class="live-rec-sel-grid">
+        <div><div class="lri-lbl lri-lbl-host">🎙 主播</div><select class="fi" id="lri-host-${idx}" style="font-size:13px">${liveCrewOptions(r.host||'')}</select></div>
+        <div><div class="lri-lbl lri-lbl-co">副播 1</div><select class="fi" id="lri-co1-${idx}" style="font-size:13px">${liveCrewOptions(r.cohost1||'')}</select></div>
+        <div><div class="lri-lbl lri-lbl-co">副播 2</div><select class="fi" id="lri-co2-${idx}" style="font-size:13px">${liveCrewOptions(r.cohost2||'')}</select></div>
+        <div><div class="lri-lbl lri-lbl-helper" style="color:var(--green)">小幫手</div><select class="fi" id="lri-hlp-${idx}" style="font-size:13px">${liveCrewOptions(r.helper||'')}</select></div>
+      </div>
+    </div>`;
+  }).join('');
+  window._liveRecCount = count;
+}
+
+function addLiveRecRow() {
+  const count = (window._liveRecCount||0) + 1;
+  window._liveRecCount = count;
+  const el = document.getElementById('live-rec-inputs');
+  if (!el) return;
+  const idx = count - 1;
+  const div = document.createElement('div');
+  div.className = 'live-rec-input-card';
+  div.id = `lri-${idx}`;
+  div.innerHTML = `<div class="live-rec-input-hd">🎥 第 ${count} 場 <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--green);cursor:pointer"><input type="checkbox" id="lri-done-${idx}" style="accent-color:var(--gold2)"> 已完成</label></div>
+    <div class="fg" style="margin-bottom:10px"><label style="font-size:11px;font-weight:700;color:var(--text3);display:block;margin-bottom:4px">直播日期</label><input type="date" class="fi" id="lri-date-${idx}"></div>
+    <div class="live-rec-num-grid">
+      <div><div class="lri-lbl" style="color:var(--blue)">營業額（元）</div><input type="number" class="fi" id="lri-rev-${idx}" placeholder="0"></div>
+      <div><div class="lri-lbl" style="color:var(--gold)">毛利（元）</div><input type="number" class="fi" id="lri-pro-${idx}" placeholder="0"></div>
+      <div><div class="lri-lbl">成交筆數</div><input type="number" class="fi" id="lri-sol-${idx}" placeholder="0"></div>
+    </div>
+    <div class="live-rec-sel-grid">
+      <div><div class="lri-lbl lri-lbl-host">🎙 主播</div><select class="fi" id="lri-host-${idx}" style="font-size:13px">${liveCrewOptions('')}</select></div>
+      <div><div class="lri-lbl lri-lbl-co">副播 1</div><select class="fi" id="lri-co1-${idx}" style="font-size:13px">${liveCrewOptions('')}</select></div>
+      <div><div class="lri-lbl lri-lbl-co">副播 2</div><select class="fi" id="lri-co2-${idx}" style="font-size:13px">${liveCrewOptions('')}</select></div>
+      <div><div class="lri-lbl" style="color:var(--green)">小幫手</div><select class="fi" id="lri-hlp-${idx}" style="font-size:13px">${liveCrewOptions('')}</select></div>
+    </div>`;
+  el.appendChild(div);
+}
+
+function calcStaffTotal(name) {
+  const str = parseFloat(document.getElementById(`stgt-str-${name}`)?.value)||0;
+  const liv = parseFloat(document.getElementById(`stgt-liv-${name}`)?.value)||0;
+  const totEl = document.getElementById(`stgt-tot-${name}`);
+  if (totEl && !totEl.value) totEl.value = (str + liv) || '';
+}
+
+function showToast(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = '';
+  setTimeout(() => { el.style.display='none'; }, 3000);
+}
+
+// ═══════════════════════════════════════════
+// ★ TARGET MANAGEMENT — Bug 1 修復
+// ★ 儲存後強制將 activeMonth 切換為剛儲存的月份，確保畫面同步更新
+// ═══════════════════════════════════════════
+function saveTargets() {
+  const ym = document.getElementById('tgt-month-input').value;
+  if (!ym) { alert('請選擇月份'); return; }
+
+  const staffTgt = {};
+  STAFF.forEach(name => {
+    const str = parseFloat(document.getElementById(`stgt-str-${name}`)?.value)||0;
+    const liv = parseFloat(document.getElementById(`stgt-liv-${name}`)?.value)||0;
+    const tot = parseFloat(document.getElementById(`stgt-tot-${name}`)?.value)||(str+liv)||0;
+    if (str||liv||tot) staffTgt[name] = { store:str, live:liv, total:tot };
+  });
+
+  const count = window._liveRecCount || 0;
+  const liveRecs = [];
+  for (let i=0; i<count; i++) {
+    const rev  = parseInt(document.getElementById(`lri-rev-${i}`)?.value)||0;
+    const pro  = parseInt(document.getElementById(`lri-pro-${i}`)?.value)||0;
+    const sol  = parseInt(document.getElementById(`lri-sol-${i}`)?.value)||0;
+    const host = document.getElementById(`lri-host-${i}`)?.value||'';
+    const co1  = document.getElementById(`lri-co1-${i}`)?.value||'';
+    const co2  = document.getElementById(`lri-co2-${i}`)?.value||'';
+    const hlp  = document.getElementById(`lri-hlp-${i}`)?.value||'';
+    const date = document.getElementById(`lri-date-${i}`)?.value||'';
+    const done = document.getElementById(`lri-done-${i}`)?.checked||false;
+    liveRecs.push({ revenue:rev, profit:pro, soldCnt:sol, host, cohost1:co1, cohost2:co2, helper:hlp, date, done });
+  }
+
+  const data = {
+    total:    parseFloat(document.getElementById('ti-total').value)||0,
+    store:    parseFloat(document.getElementById('ti-store').value)||0,
+    live:     parseFloat(document.getElementById('ti-live').value)||0,
+    sessions: parseInt(document.getElementById('ti-sessions').value)||0,
+    appr:     parseInt(document.getElementById('ti-appr').value)||0,
+    staff:    staffTgt,
+    liveRecs
+  };
+
+  const btn = document.querySelector('.mgr-panel .btn-gold');
+  if (btn) { btn.disabled=true; btn.textContent='儲存中...'; }
+
+  DB.saveTargets(ym, data, () => {
+    if (btn) { btn.disabled=false; btn.textContent='💾 儲存目標'; }
+    // ★ Bug 1 修復：切換到剛儲存的月份，確保畫面立即顯示新目標
+    activeMonth = ym;
+    document.getElementById('month-sel').value = ym;
+    renderAll();
+    alert(`✅ ${ym.replace('-','年')}月目標已儲存！`);
+  });
+}
+
+// ═══════════════════════════════════════════
+// MANAGER / PIN
+// ═══════════════════════════════════════════
+function openPinModal() {
+  if (isManager) { exitManager(); return; }
+  document.getElementById('pin-modal').classList.add('show');
+  setTimeout(() => document.getElementById('pin-input').focus(), 100);
+}
+function closePinModal() {
+  document.getElementById('pin-modal').classList.remove('show');
+  document.getElementById('pin-input').value='';
+  document.getElementById('pin-err').style.display='none';
+}
+function tryPin() {
+  const v = document.getElementById('pin-input').value;
+  DB.checkPin(v, ok => {
+    if (ok) {
+      isManager = true;
+      closePinModal();
+      document.getElementById('mgr-btn').classList.add('on');
+      document.getElementById('mgr-btn').textContent = '✅ 店長模式';
+      document.getElementById('mgr-panel').style.display='';
+      document.getElementById('mgr-login-prompt').style.display='none';
+      document.getElementById('mgr-note-th').style.display='';
+      document.getElementById('stab-profit').style.display='';
+      renderAll();
+    } else {
+      document.getElementById('pin-err').style.display='';
+      document.getElementById('pin-input').value='';
+      document.getElementById('pin-input').focus();
+    }
+  });
+}
+function exitManager() {
+  isManager = false;
+  document.getElementById('mgr-btn').classList.remove('on');
+  document.getElementById('mgr-btn').textContent = '🔐 店長模式';
+  document.getElementById('mgr-panel').style.display='none';
+  document.getElementById('mgr-login-prompt').style.display='';
+  document.getElementById('mgr-note-th').style.display='none';
+  document.getElementById('stab-profit').style.display='none';
+  if (document.getElementById('profit-form')?.classList.contains('active')) {
+    switchSubtab('sales-form','stab-sales');
+  }
+  renderAll();
+}
+function closeMgrPanel() { exitManager(); }
+function changePin() {
+  const old = document.getElementById('pin-old').value;
+  const nw  = document.getElementById('pin-new').value;
+  const msg = document.getElementById('pin-msg');
+  if (nw.length < 4) { msg.style.color='var(--red)'; msg.textContent='新密碼至少 4 位'; return; }
+  DB.checkPin(old, ok => {
+    if (!ok) { msg.style.color='var(--red)'; msg.textContent='目前密碼錯誤'; return; }
+    DB.savePin(nw, () => {
+      msg.style.color='var(--green)'; msg.textContent='✅ 密碼已修改';
+      document.getElementById('pin-old').value='';
+      document.getElementById('pin-new').value='';
+    });
+  });
+}
+
+// ═══════════════════════════════════════════
+// STAFF OVERLAY
+// ═══════════════════════════════════════════
+function openStaffMode() {
+  document.getElementById('staff-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  switchOvSubtab('ov-sales','ov-stab-sales');
+}
+function closeStaffMode() {
+  document.getElementById('staff-overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+function switchOvSubtab(panelId, btnId) {
+  document.querySelectorAll('#staff-overlay .subpanel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('#staff-overlay .stab').forEach(b=>b.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+  document.getElementById(btnId).classList.add('active');
+}
+
+function submitOvSales() {
+  const name = document.getElementById('ov-sf-name').value;
+  const date = document.getElementById('ov-sf-date').value;
+  if (!name || !date) { showToast('ov-sales-err'); return; }
+  const isLive = document.getElementById('ov-sf-islive').checked;
+  const rec = {
+    id: Date.now()+'-s', type:'sales', date, staff:name,
+    groups:    parseInt(document.getElementById('ov-sf-groups').value)||0,
+    tryon:     parseInt(document.getElementById('ov-sf-tryon').value)||0,
+    soldCnt:   parseInt(document.getElementById('ov-sf-soldcnt').value)||0,
+    noSoldCnt: parseInt(document.getElementById('ov-sf-nosold-cnt').value)||0,
+    amount:    parseInt(document.getElementById('ov-sf-amount').value)||0,
+    isLive, liveAmt:isLive?(parseInt(document.getElementById('ov-sf-liveamt').value)||0):0,
+    newLine:   parseInt(document.getElementById('ov-sf-newline').value)||0,
+    lineVisit: parseInt(document.getElementById('ov-sf-linevisit').value)||0,
+    noReason:  getMultiCheck('ov-sf-noreason-wrap','ov-sf-other-chk','ov-sf-other-text'),
+    note:      document.getElementById('ov-sf-note').value,
+    mgrNote:   ''
+  };
+  const btn=document.querySelector('#ov-sales .submit-btn');
+  btn.disabled=true; btn.textContent='送出中...';
+  DB.saveRecord(rec, () => {
+    btn.disabled=false; btn.textContent='送出業務日報';
+    ['ov-sf-groups','ov-sf-tryon','ov-sf-soldcnt','ov-sf-nosold-cnt','ov-sf-amount','ov-sf-liveamt','ov-sf-newline','ov-sf-linevisit','ov-sf-note'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    clearMultiCheck('ov-sf-noreason-wrap','ov-sf-other-text');
+    document.getElementById('ov-sf-islive').checked=false;
+    document.getElementById('ov-live-fg').style.display='none';
+    document.getElementById('demo-notice').style.display='none';
+    showToast('ov-sales-ok');
+    document.querySelector('.staff-ov-body').scrollTop=0;
+    renderAll();
+  });
+}
+
+function submitOvAppr() {
+  const name = document.getElementById('ov-af-name').value;
+  const date = document.getElementById('ov-af-date').value;
+  if (!name || !date) { showToast('ov-appr-err'); return; }
+  const noReason = document.getElementById('ov-af-noreason').value;
+  const priceGapRaw = noReason === '價格未達共識' ? (document.getElementById('ov-af-price-gap-txt').value||'').trim() : '';
+  const fullReason = noReason === '價格未達共識' && priceGapRaw ? `價格未達共識（落差：${priceGapRaw}）` : noReason;
+  const rec = {
+    id: Date.now()+'-a', type:'appraisal', date, staff:name,
+    totalCount: parseInt(document.getElementById('ov-af-total').value)||0,
+    bought:     parseInt(document.getElementById('ov-af-bought').value)||0,
+    buyAmt:     parseInt(document.getElementById('ov-af-amt').value)||0,
+    consign:    parseInt(document.getElementById('ov-af-consign').value)||0,
+    noReason:   fullReason,
+    avgTime:    parseInt(document.getElementById('ov-af-avgtime').value)||0,
+    listing:    document.getElementById('ov-af-listing').value,
+    note:       document.getElementById('ov-af-note').value,
+    mgrNote:    ''
+  };
+  const btn=document.querySelector('#ov-appr .submit-btn');
+  btn.disabled=true; btn.textContent='送出中...';
+  DB.saveRecord(rec, () => {
+    btn.disabled=false; btn.textContent='送出鑑定日報';
+    ['ov-af-total','ov-af-bought','ov-af-amt','ov-af-avgtime','ov-af-consign','ov-af-price-gap-txt','ov-af-note'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    document.getElementById('ov-af-noreason').value='';
+    document.getElementById('ov-af-listing').value='';
+    document.getElementById('ov-af-price-gap').style.display='none';
+    document.getElementById('demo-notice').style.display='none';
+    showToast('ov-appr-ok');
+    document.querySelector('.staff-ov-body').scrollTop=0;
+    renderAll();
+  });
+}
+
+// ═══════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════
+function switchTab(name, btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+function switchSubtab(panelId, btnId) {
+  document.querySelectorAll('.subpanel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.stab').forEach(b=>b.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+  document.getElementById(btnId).classList.add('active');
+}
+
+function onMonthChange() {
+  activeMonth = document.getElementById('month-sel').value;
+  renderAll();
+}
+
+function showDelConfirm(id, type) {
+  const modal = document.getElementById('del-confirm-modal');
+  const okBtn = document.getElementById('del-confirm-ok');
+  const newOk = okBtn.cloneNode(true);
+  okBtn.parentNode.replaceChild(newOk, okBtn);
+  newOk.addEventListener('click', () => {
+    modal.classList.remove('show');
+    newOk.disabled = true;
+    newOk.textContent = '刪除中...';
+    DB.deleteRecord(id, type, () => {
+      renderAll();
+      if (calRangeStart && calRangeStart === calRangeEnd) {
+        setTimeout(() => showRangeDetail(), 400);
+      }
+    });
+  });
+  modal.classList.add('show');
+}
+
+// ═══════════════════════════════════════════
+// 日曆補填
+// ═══════════════════════════════════════════
+function openBackfill() {
+  const date = window._bfDate;
+  if (!date) return;
+
+  const existS = (window._calSRecs||[]).find(r => r.date===date && r.staff==='門市整體');
+  const existA = (window._calARecs||[]).find(r => r.date===date && r.staff==='門市整體');
+  const existP = (window._calPMap||{})[date];
+
+  document.getElementById('bf-date').value    = date;
+  document.getElementById('bf-revenue').value = existS?.amount || '';
+  document.getElementById('bf-profit').value  = existP?.amount || '';
+  document.getElementById('bf-groups').value  = existS?.groups || '';
+  document.getElementById('bf-appr').value    = existA?.totalCount || '';
+  const rawNote = existS?.note || existP?.note || '';
+  document.getElementById('bf-note').value = rawNote.replace(/^【補填】\s?/,'');
+  document.getElementById('bf-toast-err').style.display='none';
+
+  const staffProfitMap = existP?.staffProfit || {};
+  const list = document.getElementById('bf-staff-profit-list');
+  list.innerHTML = '';
+  window._bfStaffRows = 0;
+  Object.entries(staffProfitMap).forEach(([name, amt]) => {
+    addBfStaffRow(name, amt);
+  });
+
+  const title = document.querySelector('#backfill-modal h3');
+  if (title) title.textContent = existS || existA || existP ? '✏️ 修改補填資料' : '📋 補填整日資料';
+
+  document.getElementById('backfill-modal').classList.add('show');
+}
+
+function addBfStaffRow(presetName, presetAmt) {
+  const list = document.getElementById('bf-staff-profit-list');
+  const idx  = window._bfStaffRows || 0;
+  window._bfStaffRows = idx + 1;
+  const allStaff = [...(window.STAFF_LIST||['KEVIN','LEO','MINI','ZOE','PHYLLIS','BEBE','CHLOE'])];
+  const opts = `<option value="">— 選擇人員 —</option>` +
+    allStaff.map(n=>`<option value="${n}"${n===presetName?' selected':''}>${n}</option>`).join('');
+  const row = document.createElement('div');
+  row.className = 'form-row2';
+  row.id = `bf-sp-row-${idx}`;
+  row.style.cssText = 'margin-bottom:8px;align-items:center;gap:8px';
+  row.innerHTML = `
+    <div class="fg" style="margin-bottom:0">
+      <select class="fi" id="bf-sp-name-${idx}" style="font-size:13px">${opts}</select>
+    </div>
+    <div class="fg" style="margin-bottom:0;display:flex;gap:6px;align-items:center">
+      <input type="number" class="fi" id="bf-sp-amt-${idx}" value="${presetAmt||''}" placeholder="毛利（元）" min="0" style="flex:1">
+      <button onclick="document.getElementById('bf-sp-row-${idx}').remove();window._bfStaffRows=Math.max(0,(window._bfStaffRows||1)-1)" style="flex-shrink:0;border:none;background:var(--red-bg);color:var(--red);border-radius:6px;padding:8px;cursor:pointer;font-size:13px">✕</button>
+    </div>`;
+  list.appendChild(row);
+}
+
+function closeBackfill() {
+  document.getElementById('backfill-modal').classList.remove('show');
+}
+
+function submitBackfill() {
+  const date    = document.getElementById('bf-date').value;
+  const revenue = parseInt(document.getElementById('bf-revenue').value)||0;
+  const profit  = parseInt(document.getElementById('bf-profit').value)||0;
+  const groups  = parseInt(document.getElementById('bf-groups').value)||0;
+  const appr    = parseInt(document.getElementById('bf-appr').value)||0;
+  const note    = document.getElementById('bf-note').value.trim();
+
+  const staffProfit = {};
+  const rows = document.getElementById('bf-staff-profit-list').children;
+  for (let i=0; i<rows.length; i++) {
+    const rowId = rows[i].id?.replace('bf-sp-row-','');
+    if (rowId === undefined) continue;
+    const name = document.getElementById(`bf-sp-name-${rowId}`)?.value;
+    const amt  = parseInt(document.getElementById(`bf-sp-amt-${rowId}`)?.value)||0;
+    if (name && amt > 0) staffProfit[name] = amt;
+  }
+
+  const hasStaffProfit = Object.keys(staffProfit).length > 0;
+
+  if (!revenue && !profit && !groups && !appr && !hasStaffProfit) {
+    document.getElementById('bf-toast-err').style.display='';
+    return;
+  }
+
+  const BF_SALES_ID = `bf-s-${date}`;
+  const BF_APPR_ID  = `bf-a-${date}`;
+  const noteStr = note ? `【補填】${note}` : '【補填】';
+  const saves = [];
+
+  saves.push(new Promise(resolve => {
+    DB.saveRecord({
+      id: BF_SALES_ID, type:'sales', date,
+      staff: '門市整體',
+      groups, tryon:0, soldCnt:0, noSoldCnt:0,
+      amount: revenue, isLive:false, liveAmt:0,
+      newLine:0, lineVisit:0,
+      noReason:'', note: noteStr, mgrNote:''
+    }, resolve);
+  }));
+
+  saves.push(new Promise(resolve => {
+    DB.saveRecord({
+      id: BF_APPR_ID, type:'appraisal', date,
+      staff: '門市整體',
+      totalCount: appr, bought:0, buyAmt:0, consign:0,
+      noReason:'', avgTime:0, listing:'',
+      note: noteStr, mgrNote:''
+    }, resolve);
+  }));
+
+  if (profit || hasStaffProfit || (window._calPMap||{})[date]) {
+    saves.push(new Promise(resolve => {
+      DB.saveProfitWithStaff(date, profit || 0, noteStr, staffProfit, resolve);
+    }));
+  }
+
+  const btn = document.querySelector('#backfill-modal .submit-btn');
+  if (btn) { btn.disabled=true; btn.textContent='儲存中...'; }
+
+  Promise.all(saves).then(() => {
+    if (btn) { btn.disabled=false; btn.textContent='確認補填'; }
+    closeBackfill();
+    renderAll();
+  });
+}
+
+// ═══════════════════════════════════════════
+// EXPORT EXCEL
+// ═══════════════════════════════════════════
+function exportExcel() {
+  const salesRows=[['日期','姓名','接待組','試背組','成交組','未成交組','成交金額','是否直播','直播金額','新加Line','Line到店','未成交主因','備註']];
+  const apprRows =[['日期','姓名','總鑑定','收購件','收購金額','寄賣件','未收購主因','平均耗時(分)','上架狀態','備註']];
+  pageCache.sales.forEach(r=>salesRows.push([r.date,r.staff,r.groups||0,r.tryon||0,r.soldCnt||0,r.noSoldCnt||0,r.amount||0,r.isLive?'是':'否',r.liveAmt||0,r.newLine||0,r.lineVisit||0,r.noReason||'',r.note||'']));
+  pageCache.appraisal.forEach(r=>apprRows.push([r.date,r.staff,r.totalCount||0,r.bought||0,r.buyAmt||0,r.consign||0,r.noReason||'',r.avgTime||0,r.listing||'',r.note||'']));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(salesRows),'業務日報');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(apprRows),'鑑定日報');
+  XLSX.writeFile(wb, `老虎城旗艦店_${activeMonth}.xlsx`);
+}
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function buildChart(canvasId, store, key, config) {
+  if (store[key]) store[key].destroy();
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+  store[key] = new Chart(ctx.getContext('2d'), config);
+}
+function setRing(prefix, actual, target) {
+  const pct   = target > 0 ? Math.min(100, actual/target*100) : 0;
+  const fill  = document.getElementById(prefix+'-fill');
+  const pctEl = document.getElementById(prefix+'-pct');
+  if (!fill||!pctEl) return;
+  const c = pct>=80?'#059669':pct>=50?'#d97706':'#dc2626';
+  fill.setAttribute('stroke-dasharray', `${pct.toFixed(1)} ${(100-pct).toFixed(1)}`);
+  fill.setAttribute('stroke', c);
+  pctEl.textContent = pct.toFixed(0)+'%';
+  pctEl.setAttribute('fill', c);
+}
+function set(id, html) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = html;
+}
+function setBar(id, actual, target) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const pct = target > 0 ? Math.min(100, actual/target*100) : 0;
+  el.style.width = pct + '%';
+  el.style.background = pct>=80?'var(--green)':pct>=50?'var(--gold2)':'var(--red)';
+}
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtYM(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function fmtW(n) {
+  if (!n) return '0';
+  if (n >= 10000) return (n/10000).toFixed(1)+'萬';
+  return n.toLocaleString();
+}
+</script>
+</body>
+</html>
