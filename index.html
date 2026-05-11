@@ -1339,7 +1339,8 @@ function injectDemoData() {
       const amount  = soldCnt > 0 ? rand(2,9)*10000+rand(0,9)*1000 : 0;
       const liveAmt = isLive ? rand(1,4)*10000 : 0;
       records.push({ id:`demo-s-${d}-${staff}`, type:'sales', date, staff,
-        groups, tryon, soldCnt, amount:amount+liveAmt, isLive, liveAmt,
+        groups, tryon, soldCnt, noSoldCnt:Math.max(0, groups-soldCnt),
+        amount:amount+liveAmt, isLive, liveAmt,
         newLine:rand(0,4), lineVisit:rand(0,2),
         noReason:soldCnt===0&&groups>2?pick(noSale):'', note:'', mgrNote:'' });
     });
@@ -1432,7 +1433,7 @@ function renderOverviewTab(sRecs, aRecs, tgt, liveDone, profitMap) {
   set('ov-sale-sub', tgt
     ? `目標 ${tgt.total}萬 · ${Math.min(100,(totalProfit/(tgt.total*10000))*100).toFixed(0)}%`
     : '尚未設定目標');
-  if (tgt) setBar('ov-sale-bar', totalProfit, tgt.total*10000, '#d97706');
+  if (tgt) setBar('ov-sale-bar', totalProfit, tgt.total*10000);
 
   const ydProfit = profitMap[yesterdayStr];
   if (isCurrentMonth && today.getDate() > 1) {
@@ -1453,22 +1454,22 @@ function renderOverviewTab(sRecs, aRecs, tgt, liveDone, profitMap) {
   set('ov-appr-sub', tgt
     ? `目標 ${tgt.appr} 件 · ${Math.min(100,(totalAppr/tgt.appr)*100).toFixed(0)}%`
     : '尚未設定目標');
-  if (tgt) setBar('ov-appr-bar', totalAppr, tgt.appr, '#059669');
+  if (tgt) setBar('ov-appr-bar', totalAppr, tgt.appr);
 
   set('ov-live-cnt', liveDone+'場');
   set('ov-live-sub', tgt
     ? `目標 ${tgt.sessions} 場 · ${Math.min(100,(liveDone/tgt.sessions)*100).toFixed(0)}%`
     : '尚未設定');
-  if (tgt) setBar('ov-live-bar', liveDone, tgt.sessions, '#0891b2');
+  if (tgt) setBar('ov-live-bar', liveDone, tgt.sessions);
 
   if (tgt) {
-    setRing('ring-total', totalProfit, tgt.total*10000, '#d97706');
+    setRing('ring-total', totalProfit, tgt.total*10000);
     document.getElementById('ring-total-vals').textContent = `毛利 ${fmtW(totalProfit)} / ${tgt.total}萬`;
-    setRing('ring-store', storeSale, tgt.store*10000, '#0891b2');
+    setRing('ring-store', storeSale, tgt.store*10000);
     document.getElementById('ring-store-vals').textContent = `店面營業額 ${fmtW(storeSale)} / ${tgt.store}萬`;
-    setRing('ring-live', liveSale, tgt.live*10000, '#7c3aed');
+    setRing('ring-live', liveSale, tgt.live*10000);
     document.getElementById('ring-live-vals').textContent = `直播 ${fmtW(liveSale)} / ${tgt.live}萬`;
-    setRing('ring-appr', totalAppr, tgt.appr, '#059669');
+    setRing('ring-appr', totalAppr, tgt.appr);
     document.getElementById('ring-appr-vals').textContent = `${totalAppr} / ${tgt.appr}件`;
   } else {
     ['total','store','live','appr'].forEach(k => {
@@ -1723,7 +1724,7 @@ function showRangeDetail() {
             <span class="cal-staff-val"><b>${r.soldCnt||0}</b>組 (${convRate})</span>
             <span class="cal-staff-val" style="color:var(--gold);font-weight:700">${r.amount?fmtW(r.amount):'無成交'}</span>
           </div>`;
-          if (r.noReason) html += `<div style="font-size:11px;color:var(--text3);padding:0 0 3px 4px">📌 ${r.noReason}</div>`;
+          if (r.noReason) html += `<div style="font-size:11px;color:var(--text3);padding:0 0 3px 4px">📌 ${esc(r.noReason)}</div>`;
         });
         const dayTotal = sr.reduce((s,r)=>s+(r.amount||0),0);
         html += `<div style="text-align:right;font-size:12px;font-weight:700;color:var(--gold);padding:4px 4px 8px">小計：${fmtW(dayTotal)}</div>`;
@@ -1743,7 +1744,7 @@ function showRangeDetail() {
             <span class="cal-staff-val"><b>${r.bought||0}</b>件(${rate})${r.consign?` 寄賣${r.consign}`:''}</span>
             <span class="cal-staff-val" style="color:var(--green);font-weight:700">${r.buyAmt?fmtW(r.buyAmt):'—'}</span>
           </div>`;
-          if (r.noReason) html += `<div style="font-size:11px;color:var(--text3);padding:0 0 3px 4px">📌 ${r.noReason}</div>`;
+          if (r.noReason) html += `<div style="font-size:11px;color:var(--text3);padding:0 0 3px 4px">📌 ${esc(r.noReason)}</div>`;
         });
       }
     });
@@ -1883,7 +1884,7 @@ function renderApprTab(aRecs, tgt) {
 
   set('ap-total',     totalCnt+'件');
   set('ap-total-sub', tgt ? `目標 ${tgt.appr} 件` : '尚未設定目標');
-  if (tgt) setBar('ap-total-bar', totalCnt, tgt.appr, '#059669');
+  if (tgt) setBar('ap-total-bar', totalCnt, tgt.appr);
   set('ap-bought',    boughtCnt+'件');
   set('ap-rate',      `收購率 ${rate}%`);
   set('ap-amt',       fmtW(buyAmt));
@@ -2091,8 +2092,8 @@ function renderRecordsTab(sRecs, aRecs) {
       <td>${isSales?(r.amount?fmtW(r.amount):'—'):(r.buyAmt?fmtW(r.buyAmt):'—')}</td>
       <td>${r.isLive?'<span class="badge b-gray">直播</span>':'—'}</td>
       <td>${r.newLine!=null?r.newLine+'人':'—'}</td>
-      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;color:var(--text3)">${r.note||'—'}</td>
-      ${isManager?`<td><input type="text" value="${r.mgrNote||''}" placeholder="備註..." style="border:1px solid var(--border2);border-radius:6px;padding:4px 8px;font-size:12px;width:120px" onchange="updateMgrNote('${r.id}',this.value)"></td>`:''}
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;color:var(--text3)">${r.note?esc(r.note):'—'}</td>
+      ${isManager?`<td><input type="text" value="${esc(r.mgrNote||'')}" placeholder="備註..." style="border:1px solid var(--border2);border-radius:6px;padding:4px 8px;font-size:12px;width:120px" onchange="updateMgrNote('${esc(r.id)}',this.value)"></td>`:''}
     </tr>`;
   }).join('') : `<tr><td colspan="10" style="text-align:center;padding:28px;color:var(--text3)">本月尚無紀錄</td></tr>`;
 }
@@ -2224,11 +2225,11 @@ function renderProfitHistory(profitMap, ym) {
       return `<div class="profit-hist-row">
         <div>
           <div class="profit-hist-date">${m}月${d}日</div>
-          ${v.note?`<div class="profit-hist-note">${v.note}</div>`:''}
+          ${v.note?`<div class="profit-hist-note">${esc(v.note)}</div>`:''}
         </div>
         <div style="text-align:right">
           <div class="profit-hist-amt">${fmtW(v.amount)}</div>
-          <button onclick="deleteProfit('${date}')" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0;margin-top:2px">✕ 刪除</button>
+          <button onclick="deleteProfit('${esc(date)}')" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0;margin-top:2px">✕ 刪除</button>
         </div>
       </div>`;
     }).join('');
@@ -2691,10 +2692,10 @@ function submitBackfill() {
 // EXPORT EXCEL
 // ═══════════════════════════════════════════
 function exportExcel() {
-  const salesRows=[['日期','姓名','接待組','試背組','成交組','成交金額','是否直播','直播金額','新加Line','Line到店','未成交主因','備註']];
-  const apprRows =[['日期','姓名','總鑑定','收購件','收購金額','未收購主因','平均耗時(分)','上架狀態','備註']];
-  pageCache.sales.forEach(r=>salesRows.push([r.date,r.staff,r.groups||0,r.tryon||0,r.soldCnt||0,r.amount||0,r.isLive?'是':'否',r.liveAmt||0,r.newLine||0,r.lineVisit||0,r.noReason||'',r.note||'']));
-  pageCache.appraisal.forEach(r=>apprRows.push([r.date,r.staff,r.totalCount||0,r.bought||0,r.buyAmt||0,r.noReason||'',r.avgTime||0,r.listing||'',r.note||'']));
+  const salesRows=[['日期','姓名','接待組','試背組','成交組','未成交組','成交金額','是否直播','直播金額','新加Line','Line到店','未成交主因','備註']];
+  const apprRows =[['日期','姓名','總鑑定','收購件','收購金額','寄賣件','未收購主因','平均耗時(分)','上架狀態','備註']];
+  pageCache.sales.forEach(r=>salesRows.push([r.date,r.staff,r.groups||0,r.tryon||0,r.soldCnt||0,r.noSoldCnt||0,r.amount||0,r.isLive?'是':'否',r.liveAmt||0,r.newLine||0,r.lineVisit||0,r.noReason||'',r.note||'']));
+  pageCache.appraisal.forEach(r=>apprRows.push([r.date,r.staff,r.totalCount||0,r.bought||0,r.buyAmt||0,r.consign||0,r.noReason||'',r.avgTime||0,r.listing||'',r.note||'']));
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(salesRows),'業務日報');
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(apprRows),'鑑定日報');
@@ -2710,7 +2711,7 @@ function buildChart(canvasId, store, key, config) {
   if (!ctx) return;
   store[key] = new Chart(ctx.getContext('2d'), config);
 }
-function setRing(prefix, actual, target, color) {
+function setRing(prefix, actual, target) {
   const pct   = target > 0 ? Math.min(100, actual/target*100) : 0;
   const fill  = document.getElementById(prefix+'-fill');
   const pctEl = document.getElementById(prefix+'-pct');
@@ -2725,12 +2726,16 @@ function set(id, html) {
   const el = document.getElementById(id);
   if (el) el.innerHTML = html;
 }
-function setBar(id, actual, target, color) {
+function setBar(id, actual, target) {
   const el = document.getElementById(id);
   if (!el) return;
   const pct = target > 0 ? Math.min(100, actual/target*100) : 0;
   el.style.width = pct + '%';
   el.style.background = pct>=80?'var(--green)':pct>=50?'var(--gold2)':'var(--red)';
+}
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 function fmtYM(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;

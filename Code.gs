@@ -227,7 +227,12 @@ function getMonthRecords(ym) {
         soldCnt:   Number(r[5]) || 0,
         noSoldCnt: Number(r[6]) || 0,
         amount:    Number(r[7]) || 0,   // ★ 業務成交金額，欄位[7]
-        isLive:    r[8] === 1 || r[8] === '1' || r[8] === true,
+        isLive:    (function(v){
+          if (v === true || v === 1) return true;
+          if (v == null || v === '' || v === 0 || v === false) return false;
+          const s = String(v).trim().toUpperCase();
+          return s === '1' || s === 'TRUE' || s === '是' || s === 'Y' || s === 'YES';
+        })(r[8]),
         liveAmt:   Number(r[9]) || 0,
         newLine:   Number(r[10]) || 0,
         lineVisit: Number(r[11]) || 0,
